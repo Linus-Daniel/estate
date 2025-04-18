@@ -16,7 +16,7 @@ function DashBoard() {
             ))
         }
     </section>
-    {/* <section className="flex flex-col md:flex-row items-center gap-4 px-3 ">
+    <section className="flex flex-col md:flex-row items-center gap-4 px-3 ">
         <div className="w-full md:w-1/2 shadow-md bg-white p-2">
 
         <LineCharts />
@@ -25,7 +25,7 @@ function DashBoard() {
 
         <PieCharts />
         </div>
-    </section> */}
+    </section>
         </div>
    </main>
   )

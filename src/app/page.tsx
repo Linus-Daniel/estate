@@ -1,12 +1,15 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/sidebar"
-import Header from "@/components/header"
-import DashBoard from "./(Admin)/dashboard/page"
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+import { motion } from "framer-motion";
+import DashBoard from "./(Admin)/dashboard/page";
+
+const App = () => {
   return (
-   <>
-   <DashBoard />
-   </>
-  )
-}
+    <main >
+
+      <DashBoard />
+    
+    </main>
+  );
+};
+
+export default App;

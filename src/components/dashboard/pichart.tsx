@@ -12,7 +12,7 @@ const COLORS = ['#01a65b', '#dc4b38', '#01c1ef',];
 
 const PieCharts = () => {
   return (
-    <PieChart className=' p-10' width={500} height={400} style={{
+    <PieChart className=' p-10 w-full h-full'  width={400} height={400} style={{
 
     }}>
         <Tooltip />
