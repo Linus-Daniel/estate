@@ -16,7 +16,7 @@ interface FormData {
 }
 
 function Profile() {
-  const [formData, setFormData] = useState<FormData>({});
+  const [formData, setFormData] = useState<FormData | any >({});
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
@@ -24,7 +24,7 @@ function Profile() {
   ) => {
     const { name, value } = e.target;
     const field = key || name;
-    setFormData((prev) => ({
+    setFormData((prev:FormData) => ({
       ...prev,
       [field]: value,
     }));
