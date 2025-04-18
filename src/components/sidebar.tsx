@@ -1,4 +1,4 @@
-import { Building, LayoutDashboard, User, ChartPie, Settings, Logs, Bell } from "lucide-react"
+import { Building, LayoutDashboard, User, ChartPie, Settings, Logs, Bell, MessageCircle } from "lucide-react"
 
 import {
   Sidebar,
@@ -30,17 +30,22 @@ const items = [
   },
   {
     title: "Maintenance Report ",
-    url: "reports",
+    url: "/reports",
     icon: ChartPie,
   },
   {
     title: "Notification",
-    url: "notification",
+    url: "/notification",
     icon: Bell,
   },
   {
+    title: "Messages",
+    url: "/chat",
+    icon: MessageCircle,
+  },
+  {
     title: "Invoice",
-    url: "invoice",
+    url: "/invoice",
     icon: Logs,
   },
 ]
