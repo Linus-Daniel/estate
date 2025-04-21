@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import DashBoard from "./(Admin)/dashboard/page";
+import DashBoard from "./(agents)/dashboard/page";
 
 const App = () => {
   return (

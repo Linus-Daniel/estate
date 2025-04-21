@@ -10,16 +10,21 @@ function Header() {
     switch(pathname) {
       case "/dashboard":
         return "Property Overview";
+        case "/notification":
+        return "Notifications";case "/chat":
+        return "Messages";
       case "/properties":
         return "Property Management";
       case "/tenants":
         return "Tenant Management";
-      case "/payments":
+      case "/invoices":
         return "Rent Payments";
-      case "/maintenance":
+      case "/reports":
         return "Maintenance Requests";
+        case "/rented-property":
+        return "Rented Properties";
       default:
-        return "Estate Management";
+        return "Linux Homes";
     }
   };
 

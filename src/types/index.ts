@@ -8,3 +8,13 @@ export interface Details {
 
 
 }
+
+export interface RoomData {
+    name:string;
+    price:number;
+    owner:string;
+    roomd:number;
+    description:string;
+    
+
+}

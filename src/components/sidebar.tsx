@@ -24,6 +24,11 @@ const items = [
     icon: User,
   },
   {
+    title: "My properties",
+    url: "/my_properties",
+    icon: User,
+  },
+  {
     title: "Rented Property",
     url: "/rented-property",
     icon: Building,
@@ -45,7 +50,7 @@ const items = [
   },
   {
     title: "Invoice",
-    url: "/invoice",
+    url: "/invoices",
     icon: Logs,
   },
 ]
