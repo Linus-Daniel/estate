@@ -26,6 +26,7 @@
     "framer-motion": "^12.6.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.492.0",
+    "mongoose": "^8.13.2",
     "next": "15.2.2",
     "npx": "^10.2.2",
     "react": "^19.0.0",

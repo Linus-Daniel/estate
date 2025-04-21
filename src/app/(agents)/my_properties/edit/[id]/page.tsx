@@ -1,4 +1,3 @@
-// app/dashboard/my-properties/edit/[id]/page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 import ImageUpload from "@/components/imageUpload";
 
-export default function EditProperty({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function EditProperty({ params }: PageProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
