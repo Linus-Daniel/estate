@@ -12,6 +12,7 @@ interface PageProps {
   params: {
     id: string;
   };
+  id:string;
 }
 
 export default function EditProperty({ params }: PageProps) {
