@@ -1,15 +1,46 @@
-// import { MongoClient } from 'mongodb';
+import mongoose, { Mongoose } from 'mongoose';
 
-// const uri = process.env.MONGODB_URI as string;
-// const options = {};
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// let client;
-// let clientPromise;
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+}
 
-// if (!global._mongoClientPromise) {
-//   client = new MongoClient(uri, options);
-//   global._mongoClientPromise = client.connect();
-// }
-// clientPromise = global._mongoClientPromise;
+interface MongooseGlobal {
+  mongoose?: {
+    conn: Mongoose | null;
+    promise: Promise<Mongoose> | null;
+  };
+}
 
-// export default clientPromise;
+// Ensure `globalThis` has the correct shape for `mongoose` caching
+const globalWithMongoose = globalThis as typeof globalThis & MongooseGlobal;
+
+if (!globalWithMongoose.mongoose) {
+  globalWithMongoose.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect(): Promise<Mongoose> {
+  if (globalWithMongoose.mongoose!.conn) {
+    return globalWithMongoose.mongoose!.conn!;
+  }
+
+  if (!globalWithMongoose.mongoose!.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    globalWithMongoose.mongoose!.promise = mongoose.connect(MONGODB_URI as unknown as string, opts).then((mongoose) => mongoose);
+  }
+
+  try {
+    globalWithMongoose.mongoose!.conn = await globalWithMongoose.mongoose!.promise;
+  } catch (e) {
+    globalWithMongoose.mongoose!.promise = null;
+    throw e;
+  }
+
+  return globalWithMongoose.mongoose!.conn!;
+}
+
+export default dbConnect;

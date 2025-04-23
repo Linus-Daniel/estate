@@ -12,7 +12,6 @@ interface PageProps {
   params: {
     id: string;
   };
-  id:string;
 }
 
 export default function EditProperty({ params }: PageProps) {
@@ -48,14 +47,14 @@ export default function EditProperty({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`/api/properties/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      
+
       if (!response.ok) throw new Error("Update failed");
       toast.success("Property updated!");
       router.push("/dashboard/my-properties");
@@ -96,7 +95,9 @@ export default function EditProperty({ params }: PageProps) {
             <Input
               id="price"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
               required
             />
           </div>
@@ -105,7 +106,9 @@ export default function EditProperty({ params }: PageProps) {
             <Input
               id="location"
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
               required
             />
           </div>
@@ -118,7 +121,9 @@ export default function EditProperty({ params }: PageProps) {
               id="bed"
               type="number"
               value={formData.bed}
-              onChange={(e) => setFormData({ ...formData, bed: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, bed: e.target.value })
+              }
             />
           </div>
           <div className="space-y-2">
@@ -127,7 +132,9 @@ export default function EditProperty({ params }: PageProps) {
               id="rooms"
               type="number"
               value={formData.rooms}
-              onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, rooms: e.target.value })
+              }
             />
           </div>
         </div>
@@ -138,7 +145,9 @@ export default function EditProperty({ params }: PageProps) {
             id="description"
             rows={4}
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
           />
         </div>
 

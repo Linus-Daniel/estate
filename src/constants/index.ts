@@ -117,3 +117,74 @@ export const homeData = [{
     "image": "/images/house1.jpg"
 }
 ]
+
+
+
+
+export const faqs = [
+    {
+      question: "How do I add a new property?",
+      answer:
+        "Go to the 'Properties' section, click 'Add Property', and fill in details like address, type, and photos. You can also bulk-upload via CSV.",
+    },
+    {
+      question: "Can tenants pay rent through the app?",
+      answer:
+        "Yes! Tenants receive a payment link via email/SMS. We support credit cards, bank transfers, and PayPal. A 1.5% fee applies for credit cards.",
+    },
+    {
+      question: "How are maintenance requests handled?",
+      answer:
+        "Tenants submit requests with photos. You’ll be notified to approve, reject, or assign a vendor. Track progress in real-time.",
+    },
+    {
+      question: "Is my data secure?",
+      answer:
+        "We use bank-grade encryption (AES-256) and comply with GDPR. Regular backups ensure no data loss.",
+    },
+    {
+      question: "What happens if a tenant misses a payment?",
+      answer:
+        "Automated reminders are sent at 3, 7, and 14 days overdue. After 30 days, you can initiate eviction paperwork from the app.",
+    },
+    {
+      question: "Can I generate custom reports?",
+      answer:
+        "Absolutely. Export financial statements, occupancy rates, or maintenance histories as PDF/Excel. Schedule auto-reports monthly.",
+    },
+    {
+      question: "How do I invite team members?",
+      answer:
+        "Navigate to 'Settings > Team' and enter their email. Assign roles like Admin, Manager, or View-Only.",
+    },
+    {
+      question: "Does the app support commercial properties?",
+      answer:
+        "Yes! We handle residential, commercial, and mixed-use. Track leases, CAM charges, and tenant improvements separately.",
+    },
+    {
+      question: "How much does it cost?",
+      answer:
+        "$29/month for up to 10 properties. Enterprise plans available. No long-term contracts—cancel anytime.",
+    },
+    {
+      question: "What if I need help?",
+      answer:
+        "24/7 live chat support in the app. For complex issues, book a callback with our experts.",
+    },
+  ];
+  
+  export const teamMembers = [
+    {
+      name: "Alex Rivera",
+      role: "CEO & Founder",
+    },
+    {
+      name: "Sam Lee",
+      role: "CTO",
+    },
+    {
+      name: "Jordan Smith",
+      role: "Head of Customer Success",
+    },
+  ];
