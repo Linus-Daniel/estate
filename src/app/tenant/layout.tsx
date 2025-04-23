@@ -1,45 +1,43 @@
-// app/tenant/layout.tsx
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import '../globals.css'
-import TenantSidebar from '@/components/layout/tenantSidebar'
-import TenantHeader from '@/components/layout/tenantHeader'
-// import { Toaster } from '@/components/ui/toaster'
+import TenantHeader from "@/components/layout/tenantHeader";
+import TenantSidebar from "@/components/layout/tenantSidebar";
+import ProtectedRoute from "@/components/protected_route";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 
-const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'Tenant Portal | PropertyPro',
-  description: 'Tenant self-service portal',
-}
 
-export default function TenantLayout({
+export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-gray-50 text-gray-900`}>
-        <div className="flex h-screen overflow-hidden">
-          {/* Tenant-specific sidebar */}
-          <TenantSidebar />
-          
-          {/* Main content area */}
-          <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {/* Tenant header */}
-            <TenantHeader />
-            
-            {/* Main content */}
-            <main className="flex-1 p-4 md:p-6 bg-white rounded-lg shadow-sm">
-              {children}
-            </main>
+  
+      <div
+        className={`antialiased`}
+      >
+    
+        {/* <ProtectedRoute> */}
+          <div className="flex h-screen overflow-hidden">
+            {/* Tenant-specific sidebar */}
+            <TenantSidebar />
+
+            {/* Main content area */}
+            <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              {/* Tenant header */}
+              <TenantHeader />
+
+              {/* Main content */}
+              <main className="flex-1 p-4 md:p-6 bg-white rounded-lg shadow-sm">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-        
-        {/* Toast notifications */}
-        {/* <Toaster /> */}
-      </body>
-    </html>
-  )
+
+          {/* Toast notifications */}
+          {/* <Toaster /> */}
+        {/* </ProtectedRoute> */}
+      </div>
+  );
 }
+

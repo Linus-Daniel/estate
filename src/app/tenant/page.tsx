@@ -1,9 +1,12 @@
+"use client"
 // app/tenant/page.tsx
 import { Home, FileText, Wrench, DollarSign, Calendar, Bell, MessageSquare } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
+import { useAuth } from '@/context/auth_context'
 
 export default function TenantDashboard() {
+  const {user} =  useAuth()
   // Mock data - replace with real data from your API
   const leaseStatus = 'Active'
   const nextPayment = {
@@ -18,7 +21,7 @@ export default function TenantDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Welcome back, Sarah</h1>
+        <h1 className="text-xl font-bold">Welcome back, {user?.name}</h1>
         <div className="flex items-center space-x-2">
           <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
             <Bell className="h-5 w-5 text-gray-600" />

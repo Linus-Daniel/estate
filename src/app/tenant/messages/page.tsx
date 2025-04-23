@@ -3,67 +3,56 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Smile, Image, Mic, Paperclip, ChevronDown, Loader2, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { useAuth } from '@/context/auth_context';
+import { useRouter } from 'next/navigation';
 
 type Message = {
   id: string;
-  text: string;
-  sender: 'me' | 'other';
-  timestamp: Date;
+  content: string;
+  sender: string;
+  createdAt: Date;
   status: 'sending' | 'sent' | 'delivered' | 'read';
-  avatar?: string;
 };
 
 type User = {
-  id: string;
+  id?: string;
   name: string;
-  avatar: string;
-  status: 'online' | 'offline' | 'away';
+  email: string;
+  avatar?: string;
+  role: string;
+  status?: 'online' | 'offline' | 'away';
   lastSeen?: Date;
 };
 
+type Chat = {
+  id: string;
+  participants: User[];
+  property?: {
+    id: string;
+    title: string;
+  };
+  lastMessage?: Message;
+  updatedAt: Date;
+};
+
 export default function Messages() {
+  const {user} = useAuth();
+  const router = useRouter();
+  
   // State
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: '1',
-    name: 'You',
-    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    status: 'online'
-  });
-  const [selectedUser, setSelectedUser] = useState<User>({
-    id: '2',
-    name: 'Sarah Johnson',
-    avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-    status: 'online',
-    lastSeen: new Date()
-  });
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-      status: 'online',
-      lastSeen: new Date()
-    },
-    {
-      id: '3',
-      name: 'Mike Peterson',
-      avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-      status: 'away',
-      lastSeen: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
-    },
-    {
-      id: '4',
-      name: 'Emma Wilson',
-      avatar: 'https://randomuser.me/api/portraits/women/4.jpg',
-      status: 'offline',
-      lastSeen: new Date(Date.now() - 1000 * 60 * 60 * 5) // 5 hours ago
-    }
-  ]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
+  const [loading, setLoading] = useState({
+    chats: true,
+    messages: false
+  });
+  const [error, setError] = useState('');
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,49 +66,68 @@ export default function Messages() {
     exit: { opacity: 0, x: -100 }
   };
 
-  // Load initial messages
+  // Fetch chats on component mount
   useEffect(() => {
-    const initialMessages: Message[] = [
-      {
-        id: '1',
-        text: 'Hey there! How are you doing?',
-        sender: 'other',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5),
-        status: 'read',
-        avatar: 'https://randomuser.me/api/portraits/women/2.jpg'
-      },
-      {
-        id: '2',
-        text: "I'm good, thanks! Just working on that project we discussed.",
-        sender: 'me',
-        timestamp: new Date(Date.now() - 1000 * 60 * 4),
-        status: 'read'
-      },
-      {
-        id: '3',
-        text: 'How about you? Any progress on your end?',
-        sender: 'me',
-        timestamp: new Date(Date.now() - 1000 * 60 * 4),
-        status: 'read'
-      },
-      {
-        id: '4',
-        text: "Yes, I've completed the design mockups. Want me to share them?",
-        sender: 'other',
-        timestamp: new Date(Date.now() - 1000 * 60 * 2),
-        status: 'read',
-        avatar: 'https://randomuser.me/api/portraits/women/2.jpg'
-      },
-      {
-        id: '5',
-        text: "That would be great! I'll review them and get back to you.",
-        sender: 'me',
-        timestamp: new Date(Date.now() - 1000 * 60 * 1),
-        status: 'delivered'
+    if (user) {
+      setCurrentUser({
+        id:"2",
+        name:user.name || 'You',
+        email:user.email || '',
+        // avatar:user.image || '/default-avatar.png',
+        role:user.role || 'user'
+      });
+
+      fetchChats();
+    }
+  }, [user]);
+
+  // Fetch messages when chat is selected
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat.id);
+    }
+  }, [selectedChat]);
+
+  const fetchChats = async () => {
+    try {
+      setLoading(prev => ({ ...prev, chats: true }));
+      const response = await fetch('/api/chats');
+      if (!response.ok) throw new Error('Failed to fetch chats');
+      const data = await response.json();
+      setChats(data);
+      if (data.length > 0 && !selectedChat) {
+        setSelectedChat(data[0]);
       }
-    ];
-    setMessages(initialMessages);
-  }, []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load chats');
+    } finally {
+      setLoading(prev => ({ ...prev, chats: false }));
+    }
+  };
+
+  const fetchMessages = async (chatId: string) => {
+    try {
+      setLoading(prev => ({ ...prev, messages: true }));
+      const response = await fetch(`/api/chats/${chatId}/messages`);
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      const data = await response.json();
+      
+      // Transform API data to our Message type
+      const formattedMessages = data.map((msg: any) => ({
+        id: msg._id,
+        content: msg.content,
+        sender: msg.sender._id,
+        createdAt: new Date(msg.createdAt),
+        status: 'read' // Assuming messages fetched are already read
+      }));
+      
+      setMessages(formattedMessages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load messages');
+    } finally {
+      setLoading(prev => ({ ...prev, messages: false }));
+    }
+  };
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -130,85 +138,74 @@ export default function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Simulate typing indicator
-  useEffect(() => {
-    if (isTyping) {
-      const timer = setTimeout(() => {
-        setIsTyping(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isTyping]);
-
   // Handle sending a message
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || !selectedChat || !currentUser) return;
 
+    const tempId = Date.now().toString();
     const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputMessage,
-      sender: 'me',
-      timestamp: new Date(),
+      id: tempId,
+      content: inputMessage,
+      sender: "2",
+      createdAt: new Date(),
       status: 'sending'
     };
 
-    setMessages([...messages, newMessage]);
+    // Optimistic update
+    setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
     setShowEmojiPicker(false);
 
-    // Simulate message sending and delivery
-    setTimeout(() => {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === newMessage.id ? { ...msg, status: 'sent' } : msg
-        )
-      );
-    }, 500);
+    try {
+      const response = await fetch(`/api/chats/${selectedChat.id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: inputMessage
+        })
+      });
 
-    // Simulate reply
-    setTimeout(() => {
-      setIsTyping(true);
-    }, 1000);
+      if (!response.ok) throw new Error('Failed to send message');
 
-    setTimeout(() => {
-      setIsTyping(false);
-      const replyMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getRandomReply(),
-        sender: 'other',
-        timestamp: new Date(),
-        status: 'delivered',
-        avatar: selectedUser.avatar
-      };
-      setMessages(prev => [...prev, replyMessage]);
-    }, 3000);
-  };
-
-  const getRandomReply = () => {
-    const replies = [
-      "Sounds good!",
-      "I'll check it out.",
-      "Thanks for letting me know.",
-      "Can we discuss this tomorrow?",
-      "That's interesting!",
-      "I agree with you.",
-      "Let me think about it.",
-      "What time works for you?"
+      const sentMessage = await response.json();
       
-    ];
-    return replies[Math.floor(Math.random() * replies.length)];
+      // Replace temp message with actual message from server
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId ? {
+          id: sentMessage._id,
+          content: sentMessage.content,
+          sender: sentMessage.sender._id,
+          createdAt: new Date(sentMessage.createdAt),
+          status: 'sent'
+        } : msg
+      ));
+
+      // Refresh chats to update last message
+      fetchChats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+      // Remove the optimistic message if sending failed
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+    }
   };
 
-  // Handle user selection
-  const handleSelectUser = (user: User) => {
-    setSelectedUser(user);
+  // Handle chat selection
+  const handleSelectChat = (chat: Chat) => {
+    setSelectedChat(chat);
     setShowUserList(false);
-    // In a real app, you would load messages for this user
+  };
+
+  // Get other participant in chat
+  const getOtherParticipant = (chat: Chat) => {
+    if (!currentUser) return null;
+    return chat.participants.find(p => p.id !== currentUser.id);
   };
 
   // Get status color
-  const getStatusColor = (status: User['status']) => {
+  const getStatusColor = (status: User['status'] = 'offline') => {
     switch (status) {
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
@@ -253,6 +250,14 @@ export default function Messages() {
     inputRef.current?.focus();
   };
 
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -260,51 +265,77 @@ export default function Messages() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-800">Messages</h1>
-            <button className="p-1 rounded-full hover:bg-gray-100">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
-                <path d="M10 12a1 1 0 100-2 1 1 0 000 2z" />
+            <button 
+              onClick={() => router.push('/messages/new')}
+              className="p-1 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {users.map(user => (
-            <motion.div
-              key={user.id}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={() => handleSelectUser(user)}
-              className={`flex items-center p-4 border-b border-gray-100 cursor-pointer ${selectedUser.id === user.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-            >
-              <div className="relative">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(user.status)}`}></span>
-              </div>
-              <div className="ml-3 flex-1">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-gray-900">{user.name}</h3>
-                  <span className="text-xs text-gray-500">
-                    {user.lastSeen && formatTime(user.lastSeen)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {user.status === 'online' ? 'Online' : `Last seen ${formatLastSeen(user.lastSeen || new Date())}`}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {loading.chats ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center p-4">
+            <p className="text-red-500 text-center">{error}</p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            {chats.map(chat => {
+              const otherParticipant = getOtherParticipant(chat);
+              return (
+                <motion.div
+                  key={chat.id}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => handleSelectChat(chat)}
+                  className={`flex items-center p-4 border-b border-gray-100 cursor-pointer ${selectedChat?.id === chat.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                >
+                  {otherParticipant && (
+                    <>
+                      <div className="relative">
+                        <img
+                          src={otherParticipant.avatar || '/default-avatar.png'}
+                          alt={otherParticipant.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(otherParticipant.status)}`}></span>
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            {otherParticipant.name}
+                            {chat.property && (
+                              <span className="text-xs text-gray-500 ml-1">• {chat.property.title}</span>
+                            )}
+                          </h3>
+                          {chat.lastMessage && (
+                            <span className="text-xs text-gray-500">
+                              {formatTime(new Date(chat.lastMessage.createdAt))}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">
+                          {chat.lastMessage?.content || 'No messages yet'}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center">
             <img
-              src={currentUser.avatar}
+              src={currentUser.avatar || '/default-avatar.png'}
               alt={currentUser.name}
               className="h-10 w-10 rounded-full object-cover"
             />
@@ -316,26 +347,38 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* Mobile user selector */}
+      {/* Mobile chat selector */}
       <div className="md:hidden relative">
         <button
           onClick={() => setShowUserList(!showUserList)}
           className="flex items-center justify-between w-full p-4 border-b border-gray-200 bg-white"
         >
-          <div className="flex items-center">
-            <img
-              src={selectedUser.avatar}
-              alt={selectedUser.name}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">{selectedUser.name}</h3>
-              <p className="text-xs text-gray-500">
-                {selectedUser.status === 'online' ? 'Online' : `Last seen ${formatLastSeen(selectedUser.lastSeen || new Date())}`}
-              </p>
+          {selectedChat ? (
+            <>
+              <div className="flex items-center">
+                <img
+                  src={getOtherParticipant(selectedChat)?.avatar || '/default-avatar.png'}
+                  alt={getOtherParticipant(selectedChat)?.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {getOtherParticipant(selectedChat)?.name}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {selectedChat.lastMessage?.content ? 
+                      selectedChat.lastMessage.content.substring(0, 20) + (selectedChat.lastMessage.content.length > 20 ? '...' : '') : 
+                      'No messages yet'}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${showUserList ? 'transform rotate-180' : ''}`} />
+            </>
+          ) : (
+            <div className="w-full text-center">
+              <p className="text-sm text-gray-500">Select a chat</p>
             </div>
-          </div>
-          <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${showUserList ? 'transform rotate-180' : ''}`} />
+          )}
         </button>
 
         <AnimatePresence>
@@ -344,30 +387,38 @@ export default function Messages() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="absolute z-10 w-full bg-white shadow-lg"
+              className="absolute z-10 w-full bg-white shadow-lg max-h-96 overflow-y-auto"
             >
-              {users.map(user => (
-                <div
-                  key={user.id}
-                  onClick={() => handleSelectUser(user)}
-                  className="flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-                >
-                  <div className="relative">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                    <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-white ${getStatusColor(user.status)}`}></span>
+              {chats.map(chat => {
+                const otherParticipant = getOtherParticipant(chat);
+                return (
+                  <div
+                    key={chat.id}
+                    onClick={() => handleSelectChat(chat)}
+                    className="flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
+                  >
+                    <div className="relative">
+                      <img
+                        src={otherParticipant?.avatar || '/default-avatar.png'}
+                        alt={otherParticipant?.name}
+                        className="h-8 w-8 rounded-full object-cover"
+                      />
+                      <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-white ${getStatusColor(otherParticipant?.status)}`}></span>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {otherParticipant?.name}
+                        {chat.property && (
+                          <span className="text-xs text-gray-500 ml-1">• {chat.property.title}</span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {chat.lastMessage?.content || 'No messages yet'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-gray-900">{user.name}</h3>
-                    <p className="text-xs text-gray-500">
-                      {user.status === 'online' ? 'Online' : `Last seen ${formatLastSeen(user.lastSeen || new Date())}`}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
@@ -376,160 +427,189 @@ export default function Messages() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
         {/* Chat header */}
-        <div className="flex items-center p-4 border-b border-gray-200 bg-white">
-          <div className="relative md:hidden">
-            <img
-              src={selectedUser.avatar}
-              alt={selectedUser.name}
-              className="h-10 w-10 rounded-full object-cover"
-            />
-            <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(selectedUser.status)}`}></span>
+        {selectedChat ? (
+          <div className="flex items-center p-4 border-b border-gray-200 bg-white">
+            <div className="relative md:hidden">
+              <img
+                src={getOtherParticipant(selectedChat)?.avatar || '/default-avatar.png'}
+                alt={getOtherParticipant(selectedChat)?.name}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+              <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(getOtherParticipant(selectedChat)?.status)}`}></span>
+            </div>
+            <div className="ml-3">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {getOtherParticipant(selectedChat)?.name}
+                {selectedChat.property && (
+                  <span className="text-sm text-gray-500 ml-2">• {selectedChat.property.title}</span>
+                )}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {getOtherParticipant(selectedChat)?.status === 'online' ? 
+                  'Online' : 
+                  `Last seen ${formatLastSeen(selectedChat.updatedAt)}`}
+              </p>
+            </div>
           </div>
-          <div className="ml-3">
-            <h2 className="text-lg font-semibold text-gray-900">{selectedUser.name}</h2>
-            <p className="text-xs text-gray-500">
-              {selectedUser.status === 'online' ? 'Online' : `Last seen ${formatLastSeen(selectedUser.lastSeen || new Date())}`}
-            </p>
+        ) : (
+          <div className="flex items-center justify-center p-4 border-b border-gray-200 bg-white h-16">
+            <h2 className="text-lg font-semibold text-gray-500">Select a chat to start messaging</h2>
           </div>
-        </div>
+        )}
 
         {/* Messages */}
         <div
           ref={messagesContainer}
           className="flex-1 p-4 overflow-y-auto bg-gray-50"
         >
-          <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                variants={messageVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-                className={`flex mb-4 ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.sender === 'other' && (
-                  <img
-                    src={message.avatar}
-                    alt="User"
-                    className="h-8 w-8 rounded-full object-cover mr-2 self-end"
-                  />
-                )}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className={`max-w-xs md:max-w-md rounded-lg px-4 py-2 ${message.sender === 'me' ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none shadow-sm'}`}
-                >
-                  <p>{message.text}</p>
-                  <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${message.sender === 'me' ? 'text-blue-100' : 'text-gray-500'}`}>
-                    <span>{formatTime(message.timestamp)}</span>
-                    {message.sender === 'me' && (
-                      <span>{getStatusIcon(message.status)}</span>
+          {loading.messages ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : (
+            <>
+              <AnimatePresence>
+                {messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    variants={messageVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={{ duration: 0.2 }}
+                    className={`flex mb-4 ${message.sender === currentUser.id ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.sender !== currentUser.id && selectedChat && (
+                      <img
+                        src={getOtherParticipant(selectedChat)?.avatar || '/default-avatar.png'}
+                        alt="User"
+                        className="h-8 w-8 rounded-full object-cover mr-2 self-end"
+                      />
                     )}
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className={`max-w-xs md:max-w-md rounded-lg px-4 py-2 ${message.sender === currentUser.id ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none shadow-sm'}`}
+                    >
+                      <p>{message.content}</p>
+                      <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${message.sender === currentUser.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                        <span>{formatTime(message.createdAt)}</span>
+                        {message.sender === currentUser.id && (
+                          <span>{getStatusIcon(message.status)}</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex mb-4 justify-start"
+                >
+                  {selectedChat && (
+                    <img
+                      src={getOtherParticipant(selectedChat)?.avatar || '/default-avatar.png'}
+                      alt="User"
+                      className="h-8 w-8 rounded-full object-cover mr-2 self-end"
+                    />
+                  )}
+                  <div className="bg-white text-gray-800 rounded-lg rounded-bl-none px-4 py-2 shadow-sm">
+                    <div className="flex space-x-1">
+                      <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
                   </div>
                 </motion.div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+              )}
 
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex mb-4 justify-start"
-            >
-              <img
-                src={selectedUser.avatar}
-                alt="User"
-                className="h-8 w-8 rounded-full object-cover mr-2 self-end"
-              />
-              <div className="bg-white text-gray-800 rounded-lg rounded-bl-none px-4 py-2 shadow-sm">
-                <div className="flex space-x-1">
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
-              </div>
-            </motion.div>
+              <div ref={messagesEndRef} />
+            </>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Message input */}
-        <div className="p-4 border-t border-gray-200 bg-white">
-          <form onSubmit={handleSendMessage} className="flex items-center">
-            <div className="flex space-x-1 mr-2">
-              <button
-                type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              >
-                <Smile className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              >
-                <Paperclip className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              >
-                <Image className="h-5 w-5" />
-              </button>
-            </div>
+        {selectedChat && (
+          <div className="p-4 border-t border-gray-200 bg-white">
+            <form onSubmit={handleSendMessage} className="flex items-center">
+              <div className="flex space-x-1 mr-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Smile className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Image className="h-5 w-5" />
+                </button>
+              </div>
 
-            <div className="relative flex-1">
-              <AnimatePresence>
-                {showEmojiPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg p-2 w-64 h-40 overflow-y-auto"
-                  >
-                    <div className="grid grid-cols-6 gap-1">
-                      {['😀', '😂', '😍', '👍', '👋', '❤️', '🔥', '🎉', '🤔', '😎'].map(emoji => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => addEmoji(emoji)}
-                          className="text-xl p-1 hover:bg-gray-100 rounded"
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
+              <div className="relative flex-1">
+                <AnimatePresence>
+                  {showEmojiPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg p-2 w-64 h-40 overflow-y-auto"
+                    >
+                      <div className="grid grid-cols-6 gap-1">
+                        {['😀', '😂', '😍', '👍', '👋', '❤️', '🔥', '🎉', '🤔', '😎'].map(emoji => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => addEmoji(emoji)}
+                            className="text-xl p-1 hover:bg-gray-100 rounded"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="w-full border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onFocus={() => setShowEmojiPicker(false)}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!inputMessage.trim()}
+                className="ml-2 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              >
+                {inputMessage.trim() ? (
+                  <Send className="h-5 w-5" />
+                ) : (
+                  <Mic className="h-5 w-5" />
                 )}
-              </AnimatePresence>
-
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="w-full border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onFocus={() => setShowEmojiPicker(false)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={!inputMessage.trim()}
-              className="ml-2 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-            >
-              {inputMessage.trim() ? (
-                <Send className="h-5 w-5" />
-              ) : (
-                <Mic className="h-5 w-5" />
-              )}
-            </button>
-          </form>
-        </div>
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

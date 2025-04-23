@@ -30,7 +30,6 @@ function Header() {
   };
 
   return (
-    <SidebarProvider>
       <header className="w-full sticky top-0 h-16 z-50 bg-white border-b border-gray-200 px-4 sm:px-6 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
           <SidebarTrigger />
@@ -87,7 +86,6 @@ function Header() {
           </div>
         </div>
       </header>
-    </SidebarProvider>
   );
 }
 

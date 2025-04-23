@@ -65,7 +65,7 @@ const Agents = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-white flex rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white flex md:flex-row flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
             >
               <div className="relative h-full">
                 <Image

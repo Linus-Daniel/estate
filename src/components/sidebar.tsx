@@ -15,42 +15,42 @@ import {
 const items = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/agent/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "Profile",
-    url: "/profile",
+    url: "/agent/profile",
     icon: User,
   },
   {
     title: "My properties",
-    url: "/my_properties",
+    url: "/agent/my_properties",
     icon: User,
   },
   {
     title: "Rented Property",
-    url: "/rented-property",
+    url: "/agent/rented-property",
     icon: Building,
   },
   {
     title: "Maintenance Report ",
-    url: "/reports",
+    url: "/agent/reports",
     icon: ChartPie,
   },
   {
     title: "Notification",
-    url: "/notification",
+    url: "/agent/notification",
     icon: Bell,
   },
   {
     title: "Messages",
-    url: "/chat",
+    url: "/agent/chat",
     icon: MessageCircle,
   },
   {
     title: "Invoice",
-    url: "/invoices",
+    url: "/agent/invoices",
     icon: Logs,
   },
 ]

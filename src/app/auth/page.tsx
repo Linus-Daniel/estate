@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Lock, User, Mail, Eye, EyeOff, Briefcase, Key, LogIn, UserPlus } from "lucide-react";
+import { useAuth } from "@/context/auth_context";
 
 type AuthMode = "signin" | "signup";
 type UserRole = "tenant" | "agent";
@@ -13,10 +14,11 @@ export default function AuthForm() {
     email: "",
     password: "",
     name: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { login, register, loading, error } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,7 +26,6 @@ export default function AuthForm() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -58,32 +59,47 @@ export default function AuthForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log({
-        mode,
-        role,
-        ...formData
-      });
-      setIsSubmitting(false);
-      // Reset form after signup
-      if (mode === "signup") {
-        setFormData({
-          email: "",
-          password: "",
-          name: "",
-          confirmPassword: ""
-        });
-        setMode("signin");
+
+    if (mode === "signin") {
+      try {
+        await login(formData.email, formData.password);
+      } catch (err) {
+        console.error(err);
       }
-    }, 1500);
+    }
+
+    if (mode === "signup") {
+      try {
+        await register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role // Include the selected role here
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setIsSubmitting(false);
+
+    if (mode === "signup") {
+      setFormData({
+        email: "",
+        password: "",
+        name: "",
+        confirmPassword: ""
+      });
+      setMode("signin");
+    }
   };
+
+
 
   const toggleMode = () => {
     setMode(prev => prev === "signin" ? "signup" : "signin");
@@ -118,7 +134,7 @@ export default function AuthForm() {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(r)}
+                  onClick={() => {setRole(r);console.log(role)}}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                     role === r
                       ? "bg-white shadow-sm text-indigo-600"

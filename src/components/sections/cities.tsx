@@ -39,14 +39,14 @@ const Cities = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex flex-col sm:flex-row"
+              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex  sm:flex-row"
             >
               <Image
                 src={city.image}
                 alt={city.name}
                 width={150}
                 height={100}
-                className=" rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                className=" rounded-l-xl sm:rounded-l-xl sm:rounded-tr-none"
               />
               <div className="p-6 flex-1">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{city.name}</h3>

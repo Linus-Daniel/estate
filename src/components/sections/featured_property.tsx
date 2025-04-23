@@ -57,13 +57,13 @@ const FeaturedProperties = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="flex justify-between items-center mb-12"
+          className="flex justify-between  mb-12"
         >
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Properties</h2>
+            <h2 className="text-lg md:text-3xl font-bold text-gray-900 mb-2">Featured Properties</h2>
             <p className="text-gray-600">Recommended for you</p>
           </div>
-          <button className="text-primary font-medium">View All Properties</button>
+          <button className="text-primary font-medium">View All</button>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
