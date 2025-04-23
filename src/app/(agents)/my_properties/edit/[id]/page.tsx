@@ -1,5 +1,4 @@
-"use client"
-// page.tsx
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,15 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 import ImageUpload from "@/components/imageUpload";
 
-interface EditPropertyProps {
-  params: { id: string };
+interface PropertyFormData {
+  name: string;
+  price: string;
+  location: string;
+  bed: string;
+  rooms: string;
+  description: string;
+  image: string;
 }
 
-// Must be async to satisfy Next.js app dir typing
-export default async function EditProperty({ params }: EditPropertyProps) {
-  // useState & hooks can still be used here (for CSR)
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function EditProperty({ params }: PageProps) {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PropertyFormData>({
     name: "",
     price: "",
     location: "",
@@ -27,43 +36,102 @@ export default async function EditProperty({ params }: EditPropertyProps) {
     image: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch property data
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const res = await fetch(`/api/properties/${params.id}`);
-        if (!res.ok) throw new Error("Fetch error");
-        const data = await res.json();
-        setFormData(data);
-      } catch {
+        setIsLoading(true);
+        const response = await fetch(`/api/properties/${params.id}`);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch property");
+        }
+        
+        const data = await response.json();
+        
+        if (!data) {
+          throw new Error("Property not found");
+        }
+        
+        setFormData({
+          name: data.name || "",
+          price: data.price || "",
+          location: data.location || "",
+          bed: data.bed?.toString() || "",
+          rooms: data.rooms?.toString() || "",
+          description: data.description || "",
+          image: data.image || "",
+        });
+      } catch (error) {
+        console.error(error);
         toast.error("Failed to load property");
+        router.push("/dashboard/my-properties");
       } finally {
         setIsLoading(false);
       }
     };
+    
     fetchProperty();
-  }, [params.id]);
+  }, [params.id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Basic validation
+    if (!formData.name || !formData.price || !formData.location) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const res = await fetch(`/api/properties/${params.id}`, {
+      const response = await fetch(`/api/properties/${params.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({
+          ...formData,
+          bed: parseInt(formData.bed) || 0,
+          rooms: parseInt(formData.rooms) || 0,
+        }),
       });
-      if (!res.ok) throw new Error("Update failed");
-      toast.success("Updated!");
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      toast.success("Property updated successfully!");
       router.push("/dashboard/my-properties");
-    } catch {
-      toast.error("Update failed");
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Failed to update property");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="flex justify-center items-center h-64">
+          <p>Loading property details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -82,8 +150,9 @@ export default async function EditProperty({ params }: EditPropertyProps) {
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={handleChange}
             required
+            disabled={isSubmitting}
           />
         </div>
 
@@ -92,11 +161,11 @@ export default async function EditProperty({ params }: EditPropertyProps) {
             <Label htmlFor="price">Price*</Label>
             <Input
               id="price"
+              type="text"
               value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
+              onChange={handleChange}
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -104,10 +173,9 @@ export default async function EditProperty({ params }: EditPropertyProps) {
             <Input
               id="location"
               value={formData.location}
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
+              onChange={handleChange}
               required
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -118,10 +186,10 @@ export default async function EditProperty({ params }: EditPropertyProps) {
             <Input
               id="bed"
               type="number"
+              min="0"
               value={formData.bed}
-              onChange={(e) =>
-                setFormData({ ...formData, bed: e.target.value })
-              }
+              onChange={handleChange}
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -129,10 +197,10 @@ export default async function EditProperty({ params }: EditPropertyProps) {
             <Input
               id="rooms"
               type="number"
+              min="0"
               value={formData.rooms}
-              onChange={(e) =>
-                setFormData({ ...formData, rooms: e.target.value })
-              }
+              onChange={handleChange}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -143,9 +211,8 @@ export default async function EditProperty({ params }: EditPropertyProps) {
             id="description"
             rows={4}
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={handleChange}
+            disabled={isSubmitting}
           />
         </div>
 
@@ -153,13 +220,13 @@ export default async function EditProperty({ params }: EditPropertyProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/my_properties")}
-            disabled={isLoading}
+            onClick={() => router.push("/dashboard/my-properties")}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>
