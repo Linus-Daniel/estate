@@ -1,4 +1,4 @@
-"use client";
+// page.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 import ImageUpload from "@/components/imageUpload";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
+interface EditPropertyProps {
+  params: { id: string };
 }
 
-export default function EditProperty({ params }: PageProps) {
+// Must be async to satisfy Next.js app dir typing
+export default async function EditProperty({ params }: EditPropertyProps) {
+  // useState & hooks can still be used here (for CSR)
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
@@ -27,15 +27,14 @@ export default function EditProperty({ params }: PageProps) {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch property data
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await fetch(`/api/properties/${params.id}`);
-        if (!response.ok) throw new Error("Failed to fetch property");
-        const data = await response.json();
+        const res = await fetch(`/api/properties/${params.id}`);
+        if (!res.ok) throw new Error("Fetch error");
+        const data = await res.json();
         setFormData(data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load property");
       } finally {
         setIsLoading(false);
@@ -47,19 +46,17 @@ export default function EditProperty({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const response = await fetch(`/api/properties/${params.id}`, {
+      const res = await fetch(`/api/properties/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
-      if (!response.ok) throw new Error("Update failed");
-      toast.success("Property updated!");
+      if (!res.ok) throw new Error("Update failed");
+      toast.success("Updated!");
       router.push("/dashboard/my-properties");
-    } catch (error) {
-      toast.error("Failed to update property");
+    } catch {
+      toast.error("Update failed");
     } finally {
       setIsLoading(false);
     }
