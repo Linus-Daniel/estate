@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Lock, User, Mail, Eye, EyeOff, Briefcase, Key, LogIn, UserPlus } from "lucide-react";
 
 type AuthMode = "signin" | "signup";
-type UserRole = "user" | "admin" | "manager";
+type UserRole = "tenant" | "agent";
 
 export default function AuthForm() {
   const [mode, setMode] = useState<AuthMode>("signin");
-  const [role, setRole] = useState<UserRole>("user");
+  const [role, setRole] = useState<UserRole>("tenant");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -114,7 +114,7 @@ export default function AuthForm() {
           {/* Role Selector */}
           <div className="px-6 pt-4">
             <div className="flex justify-between bg-gray-100 rounded-lg p-1">
-              {(["user", "admin", "manager"] as UserRole[]).map((r) => (
+              {(["agent", "tenant"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -336,14 +336,12 @@ export default function AuthForm() {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-gray-800">
-                {role === "user" && "User Account"}
-                {role === "admin" && "Administrator Account"}
-                {role === "manager" && "Manager Account"}
+                {role === "tenant" && "User Account"}
+                {role === "agent" && "Administrator Account"}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                {role === "user" && "Access basic features and personal dashboard"}
-                {role === "admin" && "Full system access with administrative privileges"}
-                {role === "manager" && "Manage teams and projects with reporting tools"}
+                {role === "tenant" && "Access basic features and personal dashboard"}
+                {role === "agent" && "Full system access with administrative privileges"}
               </p>
             </div>
           </div>
