@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       name,
       email,
       password,
-      role: role || 'tenant',
+      role: role || 'user',
       phone,
     });
 

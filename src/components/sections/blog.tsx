@@ -1,32 +1,39 @@
-"use client"
-import { motion } from 'framer-motion';
-import { FiCalendar, FiUser } from 'react-icons/fi';
+"use client";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { FiCalendar, FiUser } from "react-icons/fi";
 
 const blogPosts = [
   {
+    id: 1,
     title: "Building Gains Into Housing Stocks And How",
     date: "January 28, 2024",
     author: "Jerome Bell",
     category: "Furniture",
-    excerpt: "The average contract interest rate for 30-year fixed-rate mortgages with conforming loan balances.",
-    image: "/images/blogs/blog1.avif"
+    excerpt:
+      "The average contract interest rate for 30-year fixed-rate mortgages with conforming loan balances.",
+    image: "/images/blogs/blog1.avif",
   },
   {
+    id: 2,
     title: "92% Of Millennial Home Buyers Say Inflation...",
     date: "January 28, 2024",
     author: "Jerome Bell",
     category: "Furniture",
-    excerpt: "How inflation is affecting the home buying decisions of millennials across the country.",
-    image: "/images/blogs/blog2.webp"
+    excerpt:
+      "How inflation is affecting the home buying decisions of millennials across the country.",
+    image: "/images/blogs/blog2.webp",
   },
   {
+    id: 3,
     title: "We Are Hiring Moderately, Says Compass CEO...",
     date: "January 28, 2024",
     author: "Jerome Bell",
     category: "Furniture",
-    excerpt: "Compass CEO discusses the company's hiring strategy in the current real estate market.",
-    image: "/images/blogs/blog3.jpg"
-  }
+    excerpt:
+      "Compass CEO discusses the company's hiring strategy in the current real estate market.",
+    image: "/images/blogs/blog3.jpg",
+  },
 ];
 
 const Blog = () => {
@@ -56,9 +63,9 @@ const Blog = () => {
               className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
             >
               <div className="relative h-48">
-                <img 
-                  src={post.image} 
-                  alt={post.title} 
+                <img
+                  src={post.image}
+                  alt={post.title}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 bg-primary text-white px-3 py-1 text-sm">
@@ -76,9 +83,13 @@ const Blog = () => {
                     <span>{post.author}</span>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{post.title}</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {post.title}
+                </h3>
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                <button className="text-primary font-medium">Read More</button>
+                <Link href={`/blog/${post.id}`} className="text-primary font-medium">
+                  Read More
+                </Link>
               </div>
             </motion.div>
           ))}

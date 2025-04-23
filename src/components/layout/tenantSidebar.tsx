@@ -1,4 +1,4 @@
-// components/layout/TenantSidebar.tsx
+// components/layout/UserSidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -15,21 +15,21 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-const tenantNavItems = [
-  { name: "Dashboard", href: "/tenant", icon: Home },
-  { name: "My Lease", href: "/tenant/lease", icon: FileText },
-  { name: "Maintenance", href: "/tenant/maintenance", icon: Wrench },
-  { name: "Pay Rent", href: "/tenant/pay", icon: DollarSign },
-  { name: "Find Apartment", href: "/tenant/findhome", icon: DollarSign },
+const userNavItems = [
+  { name: "Dashboard", href: "/user", icon: Home },
+  { name: "My Lease", href: "/user/lease", icon: FileText },
+  { name: "Maintenance", href: "/user/maintenance", icon: Wrench },
+  { name: "Pay Rent", href: "/user/pay", icon: DollarSign },
+  { name: "Find Apartment", href: "/user/findhome", icon: DollarSign },
 
-  { name: "Payment History", href: "/tenant/payments", icon: CreditCard },
-  { name: "Messages", href: "/tenant/messages", icon: MessageSquare },
-  { name: "Calendar", href: "/tenant/calendar", icon: Calendar },
-  { name: "Help Center", href: "/tenant/help", icon: HelpCircle },
-  { name: "Settings", href: "/tenant/settings", icon: Settings },
+  { name: "Payment History", href: "/user/payments", icon: CreditCard },
+  { name: "Messages", href: "/user/messages", icon: MessageSquare },
+  { name: "Calendar", href: "/user/calendar", icon: Calendar },
+  { name: "Help Center", href: "/user/help", icon: HelpCircle },
+  { name: "Settings", href: "/user/settings", icon: Settings },
 ];
 
-export default function TenantSidebar() {
+export default function UserSidebar() {
   const pathname = usePathname();
 
   return (
@@ -37,10 +37,10 @@ export default function TenantSidebar() {
       <div className="flex flex-col w-64 border-r border-gray-200 bg-white">
         {/* Logo */}
         <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200">
-          <Link href="/tenant" className="flex items-center">
+          <Link href="/user" className="flex items-center">
             <Home className="h-8 w-8 text-blue-600" />
             <span className="ml-2 text-xl font-bold text-gray-900">
-              Tenant Portal
+              user Portal
             </span>
           </Link>
         </div>
@@ -48,7 +48,7 @@ export default function TenantSidebar() {
         {/* Navigation */}
         <nav className="flex-1 flex flex-col overflow-y-auto">
           <div className="space-y-1 px-2 py-4">
-            {tenantNavItems.map((item) => (
+            {userNavItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}

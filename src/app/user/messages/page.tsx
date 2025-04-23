@@ -100,6 +100,7 @@ export default function Messages() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load chats');
+      console.log(err)
     } finally {
       setLoading(prev => ({ ...prev, chats: false }));
     }

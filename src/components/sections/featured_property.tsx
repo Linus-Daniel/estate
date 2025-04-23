@@ -1,6 +1,7 @@
 "use client"
 import { motion } from 'framer-motion';
 import PropertyCard from './preoperty_card';
+import Link from 'next/link';
 
 const properties = [
   {
@@ -63,7 +64,7 @@ const FeaturedProperties = () => {
             <h2 className="text-lg md:text-3xl font-bold text-gray-900 mb-2">Featured Properties</h2>
             <p className="text-gray-600">Recommended for you</p>
           </div>
-          <button className="text-primary font-medium">View All</button>
+          <Link href={"/findhome"} className="text-primary hover:bg-primary h-fit hover:text-white transition-all ease-in-out duration-700 border-[2px] border-primary  px-3 py-1 flex items-center justify-center rounded-full font-medium">View All</Link>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

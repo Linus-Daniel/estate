@@ -1,5 +1,5 @@
 import TenantHeader from "@/components/layout/tenantHeader";
-import TenantSidebar from "@/components/layout/tenantSidebar";
+import UserSidebar from "@/components/layout/tenantSidebar";
 import ProtectedRoute from "@/components/protected_route";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -20,7 +20,7 @@ export default function RootLayout({
         {/* <ProtectedRoute> */}
           <div className="flex h-screen overflow-hidden">
             {/* Tenant-specific sidebar */}
-            <TenantSidebar />
+            <UserSidebar />
 
             {/* Main content area */}
             <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
