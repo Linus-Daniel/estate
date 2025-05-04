@@ -169,7 +169,7 @@ const Header = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/profile" className="w-full">
+                      <Link href={`${user?.role === "agent"?"/agent/dashboard":"/user"}`} className="w-full">
                         Profile
                       </Link>
                     </DropdownMenuItem>

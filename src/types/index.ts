@@ -10,7 +10,7 @@ export interface Details {
 }
 
 export interface RoomData {
-    name:string;
+    title:string;
     price:number;
     owner:string;
     roomd:number;
@@ -18,3 +18,20 @@ export interface RoomData {
     
 
 }
+
+export interface Property {
+    _id: string;
+    title: string;
+    price: number;
+    location?:{
+        formattedAddress:string
+    }
+    description:string;
+   address:string;
+    bedrooms: number;
+    bathrooms: number;
+    images: [{
+        url:string;
+        public_id:string
+    }];
+  }

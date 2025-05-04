@@ -20,6 +20,15 @@ export default function AuthForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { login, register, loading, error } = useAuth();
 
+  const handleDummyLogin = (role: 'tenant' | 'agent') => {
+    const credentials = {
+      'tenant': { email: 'tenant@example.com', password: 'password123' },
+      'agent': { email: 'agent@example.com', password: 'password123' }
+    };
+    login(credentials[role].email, credentials[role].password);
+  };
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -60,6 +69,7 @@ export default function AuthForm() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log(formData)
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -317,6 +327,8 @@ export default function AuthForm() {
                     <>
                       <LogIn className="h-5 w-5 mr-2" />
                       Sign In
+
+            
                     </>
                   ) : (
                     <>

@@ -2,71 +2,86 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Trash2, Edit } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
 import { homeData } from "@/constants";
-
-interface Property {
-  id: string;
-  name: string;
-  price: string;
-  location: string;
-  bed: string;
-  rooms: string;
-  image: string;
-}
+import { useProperty } from "@/context/PropertyContext";
+import { Property } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MyProperties() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { properties, deleteProperty } = useProperty();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
 
-  // Mock API fetch
-  useEffect(() => {
-    const fetchProperties = async () => {
+  const handleDeleteClick = (id: string) => {
+    setPropertyToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (propertyToDelete) {
       try {
-        // Replace with actual API call
-        const mockProperties: Property[] = [
-          {
-            id: "1",
-            name: "Sunset Villa",
-            price: "$350,000",
-            location: "Malibu, CA",
-            bed: "3",
-            rooms: "4",
-            image: "/property1.jpg",
-          },
-          // Add more mock properties...
-        ];
-        setProperties(mockProperties);
+        await deleteProperty(propertyToDelete);
+        toast.success("Property deleted successfully");
       } catch (error) {
-        toast.error("Failed to load properties");
+        toast.error("Failed to delete property");
       } finally {
-        setIsLoading(false);
+        setIsDeleteDialogOpen(false);
+        setPropertyToDelete(null);
       }
-    };
-    fetchProperties();
-  }, []);
-
-  const handleDelete = (id: string) => {
-    // Confirm before deleting
-    if (window.confirm("Delete this property?")) {
-      setProperties(properties.filter((prop) => prop.id !== id));
-      toast.success("Property deleted");
     }
   };
 
-  const filteredProperties = properties.filter((prop) =>
-    prop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    prop.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProperties = properties.filter(
+    (prop: Property) =>
+      prop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      prop.location?.formattedAddress.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the property and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Property
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header + Add Button */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-2xl font-bold">My Properties</h1>
@@ -78,7 +93,7 @@ export default function MyProperties() {
             className="max-w-md"
           />
           <Button asChild>
-            <Link href="/my_properties/add">
+            <Link href="/agent/my_properties/add">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New
             </Link>
@@ -107,30 +122,33 @@ export default function MyProperties() {
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {homeData.map((property) => (
-              <Card key={property.id} className="hover:shadow-lg transition-shadow">
+            {properties.map((property) => (
+              <Card
+                key={property._id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader className="p-0 relative">
                   <div className="relative h-48 w-full">
                     <Image
-                      src={property.image}
-                      alt={property.name}
+                      src={property.images[0]?.url}
+                      alt={property.title}
                       fill
                       className="object-cover rounded-t-lg"
                     />
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg">{property.name}</h3>
+                  <h3 className="font-semibold text-lg">{property.title}</h3>
                   <p className="text-primary font-medium">{property.price}</p>
-                  <p className="text-sm text-gray-600">{property.location}</p>
+                  <p className="text-sm text-gray-600">{property?.location?.formattedAddress}</p>
                   <div className="flex gap-4 mt-2 text-sm">
-                    <span>🛏️ {property.bed} Beds</span>
-                    <span>🚪 {property.rooms} Rooms</span>
+                    <span>🛏️ {property.bedrooms} Beds</span>
+                    <span>🚪 {property.bathrooms} Rooms</span>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2 p-4 pt-0">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/my_properties/edit/${property.id}`}>
+                    <Link href={`/agent/my_properties/edit/${property._id}`}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </Link>
@@ -138,7 +156,7 @@ export default function MyProperties() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDelete(property.id)}
+                    onClick={() => handleDeleteClick(property._id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete

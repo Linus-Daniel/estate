@@ -4,21 +4,69 @@
 import { useState } from 'react'
 import { DollarSign, CreditCard, Banknote, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { usePaystackPayment } from 'react-paystack'
+import { useAuth } from '@/context/auth_context'
+
+interface PaystackConfig {
+  reference: string
+  email: string
+  amount: number
+  publicKey: string
+  currency: string
+}
 
 export default function PaymentPage() {
+
+  const {user} = useAuth()
   const [paymentMethod, setPaymentMethod] = useState('credit')
-  const [amount, setAmount] = useState(1200)
+  const [amount, setAmount] = useState(120000) // Paystack uses amount in kobo (multiply by 100)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [email, setEmail] = useState<string>(user?.email as string) // You might want to get this from user or auth context
+
+
+  // Generate a unique reference for each transaction
+  const generateReference = () => {
+    return `ref_${Math.floor(Math.random() * 1000000000 + 1)}`
+  }
+
+  const config: PaystackConfig = {
+    reference: generateReference(),
+    email: email,
+    amount: amount,
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_your_public_key',
+    currency: 'NGN' // Change to your currency
+  }
+
+  const initializePayment = usePaystackPayment(config)
+
+  const onSuccess = (reference: any) => {
+    setIsProcessing(false)
+    setIsSuccess(true)
+    // You can verify the payment here with your backend
+    console.log('Payment successful:', reference)
+  }
+
+  const onClose = () => {
+    setIsProcessing(false)
+    console.log('Payment closed')
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsProcessing(true)
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false)
-      setIsSuccess(true)
-    }, 2000)
+    
+    if (paymentMethod === 'credit') {
+      // Initialize Paystack payment
+      initializePayment({onSuccess,onClose})
+    } else {
+      // For bank transfer, you might want to handle differently
+      // This is just a simulation
+      setTimeout(() => {
+        setIsProcessing(false)
+        setIsSuccess(true)
+      }, 2000)
+    }
   }
 
   if (isSuccess) {
@@ -29,7 +77,7 @@ export default function PaymentPage() {
         </div>
         <h2 className="mt-3 text-xl font-semibold">Payment Successful</h2>
         <p className="mt-2 text-gray-600">
-          Your payment of ${amount} has been processed successfully.
+          Your payment of ${amount / 100} has been processed successfully.
         </p>
         <Button className="mt-5" onClick={() => setIsSuccess(false)}>
           Make Another Payment
@@ -56,12 +104,27 @@ export default function PaymentPage() {
                 </div>
                 <input
                   type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
+                  value={amount / 100}
+                  onChange={(e) => setAmount(Number(e.target.value) * 100)}
                   className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 pr-12 py-2 border-gray-300 rounded-md"
                   placeholder="0.00"
+                  min="1"
                 />
               </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="your@email.com"
+                required
+              />
             </div>
 
             <div className="mb-6">
@@ -92,49 +155,24 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            {paymentMethod === 'credit' && (
-              <div className="mb-6 space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Card Number
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="1234 5678 9012 3456"
-                  />
+            {paymentMethod === 'bank' && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+                <p>For bank transfers, please use the account details below:</p>
+                <div className="mt-2 space-y-1">
+                  <p><strong>Bank Name:</strong> Example Bank</p>
+                  <p><strong>Account Name:</strong> Your Company Name</p>
+                  <p><strong>Account Number:</strong> 1234567890</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expiration
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full rounded-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="MM/YY"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full rounded-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="123"
-                    />
-                  </div>
-                </div>
+                <p className="mt-2">After payment, please send your proof of payment to payments@example.com</p>
               </div>
             )}
 
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={isProcessing}
+              disabled={isProcessing || amount <= 0}
             >
-              {isProcessing ? 'Processing...' : `Pay $${amount}`}
+              {isProcessing ? 'Processing...' : `Pay $${amount / 100}`}
             </Button>
           </form>
         </div>
@@ -153,7 +191,7 @@ export default function PaymentPage() {
             </div>
             <div className="border-t border-gray-200 pt-2 flex justify-between font-medium">
               <span>Total Due</span>
-              <span>${amount}</span>
+              <span>${amount / 100}</span>
             </div>
           </div>
 

@@ -13,7 +13,7 @@ import {
 } from "../ui/dropdown-menu";
 import Link from "next/link";
 
-export default function TenantHeader() {
+export default function AccountHeader() {
   const { user, logout } = useAuth();
 
   return (
@@ -68,12 +68,12 @@ export default function TenantHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuItem className="cursor-pointer">
-                <Link href="/profile" className="w-full">
-                  Profile
+                <Link href="/user/" className="w-full">
+                  Dashboard
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
-                <Link href="/settings" className="w-full">
+                <Link href="/user/settings" className="w-full">
                   Settings
                 </Link>
               </DropdownMenuItem>

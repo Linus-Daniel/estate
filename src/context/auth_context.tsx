@@ -1,10 +1,17 @@
+"use client"
 // context/AuthContext.tsx
-'use client';
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  register as apiRegister,
+  login as apiLogin,
+  getMe,
+  updateDetails as apiUpdateDetails,
+  updatePassword as apiUpdatePassword,
+  logout as apiLogout
+} from '../lib/api';
 
-interface User {
+export interface User {
   _id: string;
   name: string;
   email: string;
@@ -24,6 +31,12 @@ interface AuthContextType {
     phone?: string;
   }) => Promise<void>;
   logout: () => void;
+  updateUserDetails: (details: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  }) => Promise<void>;
+  updateUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
@@ -38,23 +51,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Initialize auth state from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
-      try {
-        const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        
-        if (storedToken && storedUser) {
+      const storedToken = localStorage.getItem('token');
+      
+      if (storedToken) {
+        try {
+          const userData = await getMe(storedToken);
+          setUser(userData.data);
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+        } catch (err) {
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
         }
-      } catch (err) {
-        console.error('Failed to initialize auth', err);
-        logout();
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
     initializeAuth();
@@ -63,47 +75,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const { token } = await apiLogin({ email, password });
 
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
+      localStorage.setItem('token', token);
+      setToken(token);
+      console.log(token)
 
-      const data = await response.json();
-      
-      // Store user and token
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      }));
-      
-      setToken(data.token);
-      setUser({
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      });
-      
-      switch (user?.role){
-        case "tenant":
-            router.push("/tenant");
-        case "agent":
-            router.push("/agent/dashboard")
+      const userData = await getMe(token);
+      if(userData?.role==="agent"){
+        localStorage.setItem("adminToken",token)
       }
-    } catch (err) {2
-      setError(err instanceof Error ? err.message : 'Login failed');
+      console.log(userData)
+      setUser(userData.data);
+
+      router.push(userData.data.role === 'agent' ? '/agent/dashboard' : '/user');
+    } catch (err:any) {
+      setError(err?.response?.data?.message || 'Login failed');
       throw err;
     } finally {
       setLoading(false);
@@ -119,49 +108,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      const { token } = await apiRegister(userData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+      if (user?.role ==="agent"){
+          localStorage.setItem("agentToken",token)
       }
+      localStorage.setItem('token', token);
 
-      const data = await response.json();
-      
-      // Automatically log in after registration
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      }));
-      
-      setToken(data.token);
-      setUser({
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      });
-      
-      switch (user?.role){
-        case "tenant":
-            router.push("/tenant");
-        case "agent":
-            router.push("/agent/dashboard")
+      setToken(token);
+
+      const userDataResponse = await getMe(token);
+      setUser(userDataResponse.data);
+
+      router.push(userDataResponse.data.role === 'agent' ? '/agent/dashboard' : '/user');
+    } catch (err:any) {
+      setError(err.response?.data?.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserDetails = async (details: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  }) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      const updatedUser = await apiUpdateDetails(details, token);
+      setUser(updatedUser.data);
+    } catch (err:any) {
+      setError(err.response?.data?.message || 'Update failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserPassword = async (currentPassword: string, newPassword: string) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiUpdatePassword({ currentPassword, newPassword }, token);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        setToken(response.token);
       }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+    } catch (err:any) {
+      setError(err.response?.data?.message || 'Password update failed');
       throw err;
     } finally {
       setLoading(false);
@@ -169,11 +173,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    apiLogout();
     setToken(null);
     setUser(null);
-    router.push('/auth');
+    router.push('/login');
   };
 
   const value = {
@@ -182,9 +185,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     register,
     logout,
+    updateUserDetails,
+    updateUserPassword,
     isAuthenticated: !!token,
     loading,
-    error,
+    error
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -23,7 +23,7 @@ const userNavItems = [
   { name: "Find Apartment", href: "/user/findhome", icon: DollarSign },
 
   { name: "Payment History", href: "/user/payments", icon: CreditCard },
-  { name: "Messages", href: "/user/messages", icon: MessageSquare },
+  { name: "Chats", href: "/user/chats", icon: MessageSquare },
   { name: "Calendar", href: "/user/calendar", icon: Calendar },
   { name: "Help Center", href: "/user/help", icon: HelpCircle },
   { name: "Settings", href: "/user/settings", icon: Settings },

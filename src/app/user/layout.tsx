@@ -1,4 +1,4 @@
-import TenantHeader from "@/components/layout/tenantHeader";
+import TenantHeader from "@/components/layout/AccountHeader";
 import UserSidebar from "@/components/layout/tenantSidebar";
 import ProtectedRoute from "@/components/protected_route";
 import type { Metadata } from "next";
@@ -17,7 +17,7 @@ export default function RootLayout({
         className={`antialiased`}
       >
     
-        {/* <ProtectedRoute> */}
+        <ProtectedRoute requiredRole="user">
           <div className="flex h-screen overflow-hidden">
             {/* Tenant-specific sidebar */}
             <UserSidebar />
@@ -36,7 +36,7 @@ export default function RootLayout({
 
           {/* Toast notifications */}
           {/* <Toaster /> */}
-        {/* </ProtectedRoute> */}
+        </ProtectedRoute>
       </div>
   );
 }

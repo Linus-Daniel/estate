@@ -3,8 +3,12 @@ import { motion } from 'framer-motion'
 import { FiCalendar, FiUser, FiArrowLeft, FiEdit, FiTrash2 } from 'react-icons/fi'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useParams } from 'next/navigation'
 
-const ViewBlog = ({ params }: { params: { id: string } }) => {
+const ViewBlog = () => {
+
+  const params = useParams()
+
   const router = useRouter()
   
   // Mock data - in a real app, you'd fetch this from an API

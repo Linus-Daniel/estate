@@ -52,7 +52,7 @@ export default function MaintenancePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Maintenance Requests</h1>
-        <Link href="/tenant/maintenance/new">
+        <Link href="/user/maintenance/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Request

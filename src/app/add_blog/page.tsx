@@ -1,7 +1,7 @@
 "use client"
 import { motion } from 'framer-motion'
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { FiSave, FiX, FiImage, FiPlus, FiTrash2 } from 'react-icons/fi'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -57,9 +57,11 @@ const EditorToolbar = ({ editor }: { editor: any }) => {
   )
 }
 
-const BlogEditor = ({ params }: { params?: { id: string } }) => {
+const BlogEditor = () => {
+  const params =  useParams()
+
   const router = useRouter()
-  const isEditing = !!params?.id
+  const isEditing = !!params.id
   
   const [formData, setFormData] = useState({
     title: isEditing ? "Building Gains Into Housing Stocks And How" : "",

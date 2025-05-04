@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import PropertyChatButton from "@/components/startChatButton";
 
 interface Property {
   id: string;
@@ -48,9 +49,10 @@ export function PropertyCard({ property }: { property: Property }) {
 
       {/* Footer (Action Button) */}
       <CardFooter className="p-4 pt-0">
-        <Link href={`/tenant/view_property/${property.id}`} className="w-full bg-primary text-white items-center flex justify-center rounded-md p-3 hover:bg-primary/90">
+        {/* <Link href={`/user/view_property/${property.id}`} className="w-full bg-primary text-white items-center flex justify-center rounded-md p-3 hover:bg-primary/90">
           View Details
-        </Link>
+        </Link> */}
+        <PropertyChatButton propertyId={property.id} />
       </CardFooter>
     </Card>
   );

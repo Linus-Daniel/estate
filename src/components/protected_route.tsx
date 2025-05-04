@@ -7,8 +7,10 @@ import { Loader2 } from "lucide-react";
 
 export default function ProtectedRoute({
   children,
+  requiredRole, // Add this prop to specify which role can access this route
 }: {
   children: React.ReactNode;
+  requiredRole?: "agent" | "user"; // Make it optional if some routes are for both
 }) {
   const { isAuthenticated, user, loading } = useAuth();
   const router = useRouter();
@@ -17,26 +19,23 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (loading) return;
 
+    // If not authenticated, redirect to auth page
     if (!isAuthenticated) {
       router.push("/auth");
       return;
     }
 
-    if (isAuthenticated && user?.role) {
-      // Set a small delay to show the redirect message before actually redirecting
+    // If route requires a specific role and user doesn't have it
+    if (requiredRole && user?.role !== requiredRole) {
       setShowRedirectMessage(true);
 
       const redirectTimer = setTimeout(() => {
-        switch (user.role) {
-          case "admin":
-            // Allow admin to stay on current page
-            setShowRedirectMessage(false);
-            break;
+        switch (user?.role) {
           case "agent":
             router.push("/agent/dashboard");
             break;
-          case "tenant":
-            router.push("/tenant");
+          case "user":
+            router.push("/user/");
             break;
           default:
             router.push("/unauthorized");
@@ -45,7 +44,7 @@ export default function ProtectedRoute({
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, loading, router, user]);
+  }, [isAuthenticated, loading, router, user, requiredRole]);
 
   if (loading) {
     return (
@@ -79,17 +78,13 @@ export default function ProtectedRoute({
           </div>
           <h2 className="mt-3 text-lg font-medium text-gray-900">
             {user?.role === "agent"
-              ? "This is a Tenant-only page"
-              : user?.role === "tenant"
-              ? "This is an Agent-only page"
-              : "Unauthorized Access"}
+              ? "This page is for Users only"
+              : "This page is for Agents only"}
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {user?.role === "agent"
               ? "Your account is registered as an Agent. Redirecting to your dashboard..."
-              : user?.role === "tenant"
-              ? "Your account is registered as a Tenant. Redirecting to your portal..."
-              : "Your account role is not recognized. Redirecting to home page..."}
+              : "Your account is registered as a User. Redirecting to your portal..."}
           </p>
           <div className="mt-4">
             <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />

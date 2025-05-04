@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from '@/context/auth_context';
 
 export default function SettingsPage() {
   const [name, setName] = useState('');
@@ -18,6 +19,7 @@ export default function SettingsPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [rentReminders, setRentReminders] = useState(true);
   const [maintenanceUpdates, setMaintenanceUpdates] = useState(true);
+  const {user} = useAuth()
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,7 +93,7 @@ export default function SettingsPage() {
                       <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
-                        value={name}
+                        value={user?.name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Doe"
                       />
@@ -101,7 +103,7 @@ export default function SettingsPage() {
                       <Input
                         id="email"
                         type="email"
-                        value={email}
+                        value={user?.email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="john@example.com"
                       />
@@ -112,7 +114,7 @@ export default function SettingsPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      value={phone}
+                      value={user?.phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+1 (555) 123-4567"
                     />
