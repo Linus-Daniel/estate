@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-
-
 export default function EditProperty() {
   const router = useRouter();
   const [formData, setFormData] = useState<Property>({
@@ -32,6 +30,10 @@ export default function EditProperty() {
     bathrooms: 0,
     description: "",
     images: [{ url: "", public_id: "" }],
+    location:{formattedAddress:""},
+    area:0,
+    type: "",
+    amenities:[""]
   });
 
   const { fetchPropertyById, updateProperty } = useProperty();
@@ -43,18 +45,22 @@ export default function EditProperty() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const data: Property = await fetchPropertyById(id) as any;
-        
+        const data: Property = (await fetchPropertyById(id)) as any;
+
         setFormData({
           title: data.title || "",
           _id: id,
           price: data.price || 0,
-          address: data.location?.formattedAddress || 
-                 (typeof data.location === 'string' ? data.location : ""),
-          bedrooms: data.bedrooms ||0 ,
+          address:
+            data.location?.formattedAddress ||
+            (typeof data.location === "string" ? data.location : ""),
+          bedrooms: data.bedrooms || 0,
           bathrooms: data.bathrooms || 0,
           description: data.description || "",
           images: data.images || [{ url: "", public_id: "" }],
+          type: "",
+          amenities:[""],
+          area:data.area
         });
       } catch (error) {
         console.error("Failed to load property:", error);
@@ -76,42 +82,43 @@ export default function EditProperty() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title) {
       toast.error("Please provide a property title");
       return;
     }
-    
+
     if (!formData.price) {
       toast.error("Please provide a property price");
       return;
     }
-    
+
     if (!formData.address) {
       toast.error("Please provide a property address");
       return;
     }
 
     setIsSubmitting(true);
-    
-    try {
 
-      console.log(formData)
+    try {
+      console.log(formData);
       await updateProperty(id, {
         title: formData.title,
         price: formData.price,
         address: formData.address,
-        bedrooms: formData.bedrooms|| 0,
+        bedrooms: formData.bedrooms || 0,
         bathrooms: formData.bathrooms || 0,
         description: formData.description,
         images: formData.images,
       });
-      
+
       toast.success("Property updated successfully!");
       router.push("/agent/my_properties");
     } catch (error) {
       console.error("Update failed:", error);
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
     } finally {
       setIsSubmitting(false);
     }
