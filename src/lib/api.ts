@@ -1,8 +1,9 @@
+import { PaymentPropsTypes } from "@/types";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:"https://estate-backend-qlai.onrender.com/api/v1",
-  // baseURL: "http://localhost:5000/api/v1",
+  // baseURL:"https://estate-backend-qlai.onrender.com/api/v1",
+  baseURL: "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json; charset=utf-8",
   },
@@ -13,12 +14,9 @@ export default api;
 // Example using fetch
 export async function getCsrfToken() {
   try {
-    const response = await api.get(
-      "/csrf-token",
-      {
-        withCredentials: true, // send cookies
-      }
-    );
+    const response = await api.get("/csrf-token", {
+      withCredentials: true, // send cookies
+    });
     return response.data.csrfToken;
   } catch (error) {
     console.error(error);
@@ -91,7 +89,7 @@ export const register = async (userData: UserData) => {
 export const login = async (loginData: LoginData) => {
   try {
     const csrfToken = await getCsrfToken();
-    localStorage.setItem("csrfToken",csrfToken)
+    localStorage.setItem("csrfToken", csrfToken);
 
     const response = await api.post("/auth/login", loginData, {
       headers: {
@@ -113,8 +111,8 @@ export const login = async (loginData: LoginData) => {
 export const getMe = async (token: string) => {
   const response = await api.get(`/auth/me`, {
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
   return response.data;
 };
@@ -126,8 +124,8 @@ export const updateDetails = async (
 ) => {
   const response = await api.put(`/auth/updatedetails`, details, {
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
   return response.data;
 };
@@ -139,8 +137,8 @@ export const updatePassword = async (
 ) => {
   const response = await api.put(`/auth/updatepassword`, passwords, {
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
   return response.data;
 };
@@ -152,7 +150,10 @@ export const forgotPassword = async (email: string) => {
 };
 
 // Reset password
-export const resetPassword = async (token: string, passwords: { password: string }) => {
+export const resetPassword = async (
+  token: string,
+  passwords: { password: string }
+) => {
   const response = await api.put(`/auth/resetpassword/${token}`, passwords);
   return response.data;
 };
@@ -160,22 +161,25 @@ export const resetPassword = async (token: string, passwords: { password: string
 // Logout (handled client-side)
 export const logout = () => {
   // Remove token from localStorage
-  localStorage.removeItem('token');
+  localStorage.removeItem("token");
 };
 
 // Image Upload Functions
-export const uploadImage = async (file: File, token: string): Promise<UploadResponse> => {
-  console.log(file)
+export const uploadImage = async (
+  file: File,
+  token: string
+): Promise<UploadResponse> => {
+  console.log(file);
   try {
     const csrfToken = await getCsrfToken();
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post('/upload', formData, {
+    const response = await api.post("/upload", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
-        'x-csrf-token': csrfToken,
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+        "x-csrf-token": csrfToken,
       },
       withCredentials: true,
     });
@@ -189,13 +193,16 @@ export const uploadImage = async (file: File, token: string): Promise<UploadResp
   }
 };
 
-export const deleteImage = async (publicId: string, token: string): Promise<void> => {
+export const deleteImage = async (
+  publicId: string,
+  token: string
+): Promise<void> => {
   try {
     const csrfToken = await getCsrfToken();
     await api.delete(`/upload/${publicId}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-csrf-token': csrfToken,
+        Authorization: `Bearer ${token}`,
+        "x-csrf-token": csrfToken,
       },
       withCredentials: true,
     });
@@ -207,3 +214,36 @@ export const deleteImage = async (publicId: string, token: string): Promise<void
   }
 };
 
+// payment handling
+export const handlePayment = async ({
+  propertyId,
+  email,
+  
+}: PaymentPropsTypes) => {
+  try {
+    const csrfToken = await getCsrfToken();
+    console.log(csrfToken);
+    const res = await api.post(
+      "/payments/initialize",
+      { propertyId, email: email, callback_url:"http://localhost:3000/user/payment" },
+      {
+        headers: {
+          "x-csrf-token": csrfToken,
+        },
+
+        withCredentials: true,
+      }
+    );
+
+    const { authorizationUrl } = res.data;
+
+    // Redirect user to Paystack checkout
+    window.location.href = authorizationUrl;
+  } catch (error: any) {
+    console.error(
+      "Payment initialization failed:",
+      error.response?.data || error.message
+    );
+    alert("Unable to initialize payment. Please try again.");
+  }
+};

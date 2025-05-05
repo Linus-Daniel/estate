@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth_context';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import api, { getCsrfToken } from '@/lib/api';
 
 // Mock data and functions for local testing
 const MOCK_CHAT_RESPONSE = {
@@ -28,7 +29,7 @@ export default function PropertyChatButton({ propertyId }: { propertyId: string 
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
-  const [useMockData, setUseMockData] = useState(false); // Toggle for testing
+  
 
   const initiateChat = async () => {
     if (!user) {
@@ -40,24 +41,23 @@ export default function PropertyChatButton({ propertyId }: { propertyId: string 
     try {
       let response;
       
-      if (useMockData || process.env.NODE_ENV === 'development') {
-        // Use mock data in development or when forced
-        response = await mockInitiateChat(propertyId);
-      } else {
+
         // Call real backend API in production
-        response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/properties/${propertyId}/chat`,
+        response = await api.post(
+          `/properties/${propertyId}/chat`,
           {},
           {
             headers: {
               'Content-Type': 'application/json',
+              "x-csrf-token": await getCsrfToken(),
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
+            withCredentials:true
           }
         );
-      }
+      
 
-      console.log('Chat initiated:', response.data);
+      console.log('Chat initiated:', response.data.data._id, response.data.data);
       router.push(`/user/chats/${response.data.data._id}`);
     } catch (error) {
       console.error('Error initiating chat:', error);
@@ -73,11 +73,7 @@ export default function PropertyChatButton({ propertyId }: { propertyId: string 
     }
   };
 
-  // For testing purposes - can be removed in production
-  const toggleMockData = () => {
-    setUseMockData(!useMockData);
-    alert(`Now using ${!useMockData ? 'MOCK' : 'REAL'} data`);
-  };
+
 
   return (
     <div className="flex flex-col items-start gap-2">
@@ -87,14 +83,14 @@ export default function PropertyChatButton({ propertyId }: { propertyId: string 
       </Button>
       
       {/* Testing toggle - remove in production */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* {process.env.NODE_ENV === 'development' && (
         <button 
-          onClick={toggleMockData}
+          onClick={initiateChat}
           className="text-xs text-gray-500 hover:underline"
         >
           {useMockData ? 'Using Mock Data' : 'Using Real Data'} (Dev Only)
         </button>
-      )}
+      )} */}
     </div>
   );
 }

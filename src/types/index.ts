@@ -34,4 +34,14 @@ export interface Property {
         url:string;
         public_id:string
     }];
+    type:string
+    amenities:[string];
+    area:number
   }
+
+
+export interface PaymentPropsTypes {
+    token:string;
+    email:string;
+    propertyId:string
+}

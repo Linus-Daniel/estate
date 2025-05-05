@@ -17,6 +17,7 @@ export interface User {
   email: string;
   role: string;
   phone?: string;
+  avatar?:string
 }
 
 interface AuthContextType {
@@ -29,6 +30,7 @@ interface AuthContextType {
     password: string;
     role?: string;
     phone?: string;
+    avatar?:string;
   }) => Promise<void>;
   logout: () => void;
   updateUserDetails: (details: {

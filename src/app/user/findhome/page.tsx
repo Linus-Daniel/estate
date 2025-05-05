@@ -1,32 +1,20 @@
-// app/page.tsx
-import { homeData } from "@/constants";
+"use client"
 import { PropertyCard } from "@/constants/propertyCard";
-
-const sampleProperty = {
-  id: "1",
-  name: "Sunset Villa",
-  price: "$350,000",
-  location: "Malibu, California",
-  bed: "3",
-  rooms: "4",
-  description: "A stunning beachfront villa with panoramic ocean views, modern amenities, and spacious living areas.",
-  image: "https://example.com/images/sunset-villa.jpg",
-};
+import { useProperty } from "@/context/PropertyContext";
+import { getCsrfToken } from "@/lib/api";
+import { useEffect } from "react";
 
 export default function Home() {
+  const { properties } = useProperty();
+  useEffect(()=>{const token = getCsrfToken(); console.log(token)},[])
+  
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Featured Properties</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        {
-          homeData.map((item,index) => (
-
-            <PropertyCard property={item} key={index} />
-
-          ))
-        }
-        {/* Add more cards here */}
+    <div className="p-4 sm:p-6">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Featured Properties</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {properties.map((item) => (
+          <PropertyCard property={item} key={item._id} />
+        ))}
       </div>
     </div>
   );
