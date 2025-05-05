@@ -2,8 +2,8 @@ import { PaymentPropsTypes } from "@/types";
 import axios from "axios";
 
 const api = axios.create({
-  // baseURL:"https://estate-backend-qlai.onrender.com/api/v1",
-  baseURL: "http://localhost:5000/api/v1",
+  baseURL:"https://estate-backend-qlai.onrender.com/api/v1",
+  // baseURL: "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json; charset=utf-8",
   },
@@ -69,6 +69,7 @@ interface UploadResponse {
 export const register = async (userData: UserData) => {
   try {
     const csrfToken = await getCsrfToken();
+    console.log(csrfToken)
     const response = await api.post("/auth/register", userData, {
       headers: {
         "Content-Type": "application/json",
@@ -89,6 +90,7 @@ export const register = async (userData: UserData) => {
 export const login = async (loginData: LoginData) => {
   try {
     const csrfToken = await getCsrfToken();
+    console.log(csrfToken)
     localStorage.setItem("csrfToken", csrfToken);
 
     const response = await api.post("/auth/login", loginData, {
