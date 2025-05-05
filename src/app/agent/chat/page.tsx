@@ -20,8 +20,13 @@ import api, { getCsrfToken } from "@/lib/api";
 type Message = {
   _id: string;
   content: string;
-  sender: string; // user ID
+  sender:{
+    _id:string;
+    name:string;
+    avatar?:string
+  }; // user ID
   timestamp: Date;
+  read:any
   status: "sending" | "sent" | "delivered" | "read";
 };
 
@@ -136,7 +141,7 @@ export default function ChatApp() {
 
     // Listen for new messages
     socket.on("newMessage", (message: Message) => {
-      if (message.sender === selectedUser?._id) {
+      if (message.sender._id === selectedUser?._id) {
         setMessages((prev) => [...prev, { ...message, status: "delivered" }]);
       }
     });
@@ -184,9 +189,10 @@ export default function ChatApp() {
     const newMessage: Message = {
       _id: tempId,
       content: inputMessage,
-      sender: user._id,
+      sender: {_id:user._id,name:""},
       timestamp: new Date(),
       status: "sending",
+      read:""
     };
 
     // Optimistic update
