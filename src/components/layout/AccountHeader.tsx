@@ -1,7 +1,6 @@
-// components/layout/TenantHeader.tsx
 "use client";
 
-import { Bell, User, HelpCircle } from "lucide-react";
+import { Bell, User, HelpCircle, Menu } from "lucide-react";
 import { Button } from "../ui/button";
 import { useAuth } from "@/context/auth_context";
 import { Skeleton } from "../ui/skeleton";
@@ -13,22 +12,34 @@ import {
 } from "../ui/dropdown-menu";
 import Link from "next/link";
 
-export default function AccountHeader() {
+interface TenantHeaderProps {
+  onMenuToggle: () => void;
+  isMobile: boolean;
+}
+
+export default function TenantHeader({ onMenuToggle, isMobile }: TenantHeaderProps) {
   const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-        {/* Portal title with dynamic role - now truncating long text */}
-        <div>
-
-          <h1 className="text-lg font-semibold truncate max-w-[180px] sm:max-w-none">
-            {user?.role === "admin"
-              ? "Admin"
-              : user?.role === "agent"
-              ? "Agent"
-              : "Tenant"}{" "}
-            Portal
+        <div className="flex items-center gap-4">
+          {/* Mobile menu button - only shows on mobile */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 -ml-2"
+              onClick={onMenuToggle}
+            >
+              <Menu className="h-5 w-5 text-gray-600" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          )}
+          
+          {/* Portal title */}
+          <h1 className="text-lg hidden md:block  font-semibold truncate max-w-[180px] sm:max-w-none">
+            Dashboard
           </h1>
         </div>
 
