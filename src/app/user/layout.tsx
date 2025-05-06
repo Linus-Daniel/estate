@@ -25,7 +25,7 @@ export default function RootLayout({
             {/* Main content area */}
             <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
               {/* Tenant header */}
-              <TenantHeader />
+              <TenantHeader  />
 
               {/* Main content */}
               <main className="flex-1 p-4 md:p-6 bg-white rounded-lg shadow-sm">

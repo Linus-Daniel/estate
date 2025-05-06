@@ -17,25 +17,14 @@ interface TenantHeaderProps {
   isMobile: boolean;
 }
 
-export default function TenantHeader({ onMenuToggle, isMobile }: TenantHeaderProps) {
+export default function TenantHeader() {
   const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <div className="flex items-center gap-4">
-          {/* Mobile menu button - only shows on mobile */}
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 -ml-2"
-              onClick={onMenuToggle}
-            >
-              <Menu className="h-5 w-5 text-gray-600" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          )}
+    
           
           {/* Portal title */}
           <h1 className="text-lg hidden md:block  font-semibold truncate max-w-[180px] sm:max-w-none">
