@@ -1,9 +1,16 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSocket } from "@/context/socketContext";
 import { useAuth } from "@/context/auth_context";
-import axios from "axios";
-import { Send, Loader2, Smile, Image, Paperclip, Mic } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  Smile,
+  Image,
+  Paperclip,
+  Mic,
+  CheckCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
@@ -20,6 +27,7 @@ interface Message {
   content: string;
   createdAt: string;
   read: boolean;
+  chatId: string;
 }
 
 interface ChatInfo {
@@ -45,7 +53,7 @@ export default function ChatWindow() {
   const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const params = useParams();
@@ -53,66 +61,71 @@ export default function ChatWindow() {
 
   const chatId = params.chatId as string;
 
-  // Fetch chat info and messages
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
 
-        // // Fetch chat info
-        // const chatRes = await api.get(`/chats/${chatId}`, {
-        //   headers: {
-        //     "x-csrf-token": await getCsrfToken(),
-        //   },
-        //   withCredentials: true,
-        // });
-        // setChatInfo(chatRes.data.data);
+  // Fetch chat data
+  const fetchChatData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        // Fetch messages
-        const messagesRes = await api.get(`/chats/${chatId}/messages`, {
-          headers: {
-            "x-csrf-token": await getCsrfToken(),
-          },
-          withCredentials: true,
-        });
-        setMessages(messagesRes.data.data);
-        console.log(messages)
-      } catch (err) {
-        console.error("Error fetching chat data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Fetch messages
+      const messagesRes = await api.get(`/chats/${chatId}/messages`, {
+        headers: { "x-csrf-token": await getCsrfToken() },
+        withCredentials: true,
+      });
 
-    if (chatId) {
-      fetchData();
+      setMessages(messagesRes.data.data);
+    } catch (err) {
+      console.error("Error fetching chat data:", err);
+    } finally {
+      setLoading(false);
     }
   }, [chatId]);
 
-  // Set up socket listeners
+  // Initialize chat
   useEffect(() => {
-    if (!socket || !chatId) return;
+    if (chatId) {
+      fetchChatData();
+    }
+  }, [chatId, fetchChatData]);
 
-    // Join the chat room
-    socket.emit("join", chatId);
+  // Socket event handlers
+  const handleNewMessage = useCallback(
+    (message: Message) => {
+      if (message.chatId === chatId) {
+        setMessages((prev) => [...prev, message]);
+      }
+    },
+    [chatId]
+  );
 
-    // Listen for new messages
-    socket.on("receive message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+  const handleTypingEvent = useCallback(() => {
+    setOtherUserTyping(true);
+    const timer = setTimeout(() => setOtherUserTyping(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-    // Listen for typing events
-    socket.on("typing", () => {
-      setOtherUserTyping(true);
-      const timer = setTimeout(() => setOtherUserTyping(false), 2000);
-      return () => clearTimeout(timer);
+  // Setup socket listeners
+  useEffect(() => {
+    if (!socket || !chatId || !isConnected) return;
+
+    console.log("Setting up socket listeners for chat:", chatId);
+
+    socket.emit("joinChat", chatId);
+    socket.on("newMessage", handleNewMessage);
+    socket.on("userTyping", handleTypingEvent);
+
+    // Debugging
+    socket.onAny((event, ...args) => {
+      console.log(`Socket event: ${event}`, args);
+        // setMessages(prev=>[...prev,event]) 
     });
 
     return () => {
-      socket.off("receive message");
-      socket.off("typing");
+      socket.off("newMessage", handleNewMessage);
+      socket.off("userTyping", handleTypingEvent);
+      socket.emit("leaveChat", chatId);
     };
-  }, [socket, chatId]);
+  }, [socket, chatId, isConnected, handleNewMessage, handleTypingEvent]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -120,43 +133,62 @@ export default function ChatWindow() {
   }, [messages]);
 
   // Handle typing indicator
-  const handleTyping = () => {
-    if (socket && chatId) {
+  const handleTyping = useCallback(() => {
+    if (socket && chatId && isConnected) {
       socket.emit("typing", chatId);
     }
-  };
+  }, [socket, chatId, isConnected]);
 
   // Handle sending message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !chatId) return;
+    if (!newMessage.trim() || !user || !chatId || !socket) return;
 
-    setSending(true);
-    try {
-      const res = await api.post(`chats/${chatId}/messages`, {
-        content: newMessage,
+    const tempId = Date.now().toString();
+    const tempMessage: Message = {
+      _id: tempId,
+      sender: {
+        _id: user._id,
+        name: user.name,
+        photo: user.avatar,
       },
-      {
-        headers: {
-          "x-csrf-token": await getCsrfToken(),
-        },
-        withCredentials: true,
-      });
+      content: newMessage,
+      createdAt: new Date().toISOString(),
+      read: false,
+      chatId,
+    };
 
-      setMessages((prev) => [...prev, res.data.data]);
-      setNewMessage("");
-      setShowEmojiPicker(false);
+    // Optimistic update
+    setMessages((prev) => [...prev, tempMessage]);
+    setNewMessage("");
+    setShowEmojiPicker(false);
+    setSending(true);
+
+    try {
+      const res = await api.post(
+        `chats/${chatId}/messages`,
+        { content: newMessage },
+        {
+          headers: { "x-csrf-token": await getCsrfToken() },
+          withCredentials: true,
+        }
+      );
+
+      // Replace temp message with server response
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === tempId ? res.data.data : msg))
+      );
 
       // Emit socket event
-      if (socket) {
-        socket.emit("sendMessage", {
-          chatId,
-          senderId: user._id,
-          content: newMessage,
-        });
-      }
+      socket.emit("sendMessage", {
+        chatId,
+        message: res.data.data,
+        recipientId: otherParticipant?._id,
+      });
     } catch (err) {
       console.error("Error sending message:", err);
+      // Rollback optimistic update
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
     } finally {
       setSending(false);
     }
@@ -278,47 +310,47 @@ export default function ChatWindow() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
               className={`flex ${
-                message.sender._id === user?._id
+                message.sender?._id === user?._id
                   ? "justify-end"
                   : "justify-start"
               }`}
             >
               <div className="flex max-w-[90%] md:max-w-[70%]">
-                {message.sender._id !== user?._id && (
+                {message.sender?._id !== user?._id && (
                   <img
-                    src={message.sender.photo || "/default-avatar.png"}
-                    alt={message.sender.name}
+                    src={message.sender?.photo || "/default-avatar.png"}
+                    alt={message.sender?.name}
                     className="h-8 w-8 rounded-full mt-1 mr-2 self-start"
                   />
                 )}
                 <div
                   className={`rounded-xl px-4 py-2 ${
-                    message.sender._id === user?._id
+                    message.sender?._id === user?._id
                       ? "bg-blue-500 text-white rounded-br-none"
                       : "bg-white text-gray-800 rounded-bl-none shadow-sm"
                   }`}
                 >
-                  {message.sender._id !== user?._id && (
-                    <p className="font-medium text-sm">{message.sender.name}</p>
+                  {message.sender?._id !== user?._id && (
+                    <p className="font-medium text-sm">{message.sender?.name}</p>
                   )}
-                  <p className={message.sender._id !== user?._id ? "mt-1" : ""}>
+                  <p className={message.sender?._id !== user?._id ? "mt-1" : ""}>
                     {message.content}
                   </p>
                   <p
                     className={`text-xs mt-1 flex items-center justify-end space-x-1 ${
-                      message.sender._id === user?._id
+                      message.sender?._id === user?._id
                         ? "text-blue-100"
                         : "text-gray-500"
                     }`}
                   >
-                    <span>
+                    {/* <span>
                       {formatDistanceToNow(new Date(message.createdAt), {
                         addSuffix: true,
                       })}
-                    </span>
-                    {message.sender._id === user?._id && (
+                    </span> */}
+                    {message.sender?._id === user?._id && (
                       <span>
-                        {message.read ? (
+                        {message?.read ? (
                           <span className="text-blue-300">✓✓</span>
                         ) : (
                           <span>✓</span>

@@ -16,18 +16,20 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useSocket } from "@/context/socketContext";
 import { useAuth } from "@/context/auth_context";
 import api, { getCsrfToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 type Message = {
   _id: string;
   content: string;
-  sender:{
-    _id:string;
-    name:string;
-    avatar?:string
-  }; // user ID
+  sender: {
+    _id: string;
+    name: string;
+    avatar?: string;
+  };
   timestamp: Date;
-  read:any
-  status: "sending" | "sent" | "delivered" | "read";
+  read: boolean;
+  status: "sending" | "sent" | "delivered" | "read" | "failed";
+  chatId: string;
 };
 
 type User = {
@@ -37,6 +39,7 @@ type User = {
   status: "online" | "offline" | "away";
   lastSeen?: Date;
   chatId: string;
+  lastMessage?: Message;
 };
 
 export default function ChatApp() {
@@ -47,8 +50,11 @@ export default function ChatApp() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setselectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
   const [loading, setLoading] = useState({
@@ -57,44 +63,33 @@ export default function ChatApp() {
   });
   const [error, setError] = useState("");
 
+  const router = useRouter();
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [messagesContainer] = useAutoAnimate<HTMLDivElement>();
 
-  // Animation variants
-  const messageVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, x: -100 },
-  };
-
+  // Fetch users and initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch users
         const usersResponse = await api.get("/chats/", {
-          headers: {
-            "x-csrf-token": await getCsrfToken(),
-          },
+          headers: { "x-csrf-token": await getCsrfToken() },
           withCredentials: true,
         });
 
-        // Extract the first participant from each chat object
-        const simplifiedUsers = usersResponse.data.data.map((chat: any) => {
-          return {
-            ...chat.participants[0], // Take the first participant's properties
-            chatId: chat._id, // Keep the chat ID for reference
-            lastMessage: chat.lastMessage, // Keep the last message
-            property: chat.property, // Keep the property info if needed
-          };
-        });
+        const simplifiedUsers = usersResponse.data.data.map((chat: any) => ({
+          ...chat.participants[0],
+          chatId: chat._id,
+          lastMessage: chat.lastMessage,
+          property: chat.property,
+        }));
 
         setUsers(simplifiedUsers);
-        console.log(simplifiedUsers);
-
-        // Select first user by default if array is not empty
-
+        if (simplifiedUsers.length > 0) {
+          setSelectedUser(simplifiedUsers[0]);
+        }
         setLoading((prev) => ({ ...prev, users: false }));
       } catch (err) {
         setError("Failed to load users");
@@ -114,14 +109,17 @@ export default function ChatApp() {
         const response = await api.get(
           `/chats/${selectedUser.chatId}/messages`,
           {
-            headers: {
-              "x-csrf-token": await getCsrfToken(),
-            },
+            headers: { "x-csrf-token": await getCsrfToken() },
             withCredentials: true,
           }
         );
-        setMessages(response.data.data);
-        console.log(response.data.data);
+
+        const sortedMessages = response.data.data.sort(
+          (a: Message, b: Message) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        setMessages(sortedMessages);
         setLoading((prev) => ({ ...prev, messages: false }));
       } catch (err) {
         setError("Failed to load messages");
@@ -132,44 +130,79 @@ export default function ChatApp() {
     fetchMessages();
   }, [selectedUser]);
 
-  // Set up socket listeners
+  // Socket event handlers
   useEffect(() => {
-    if (!socket || !user) return;
+    if (!socket || !selectedUser) return;
 
-    // Join user's room
-    socket.emit("join", user._id);
+    // Join the chat room
+    socket.emit("joinChat", selectedUser.chatId);
 
-    // Listen for new messages
-    socket.on("newMessage", (message: Message) => {
-      if (message.sender._id === selectedUser?._id) {
-        setMessages((prev) => [...prev, { ...message, status: "delivered" }]);
+    // New message handler
+    const handleNewMessage = (message: Message) => {
+      if (message.chatId === selectedUser.chatId) {
+        setMessages((prev) => {
+          // Prevent duplicates
+          if (prev.some((m) => m._id === message._id)) return prev;
+          return [...prev, message].sort(
+            (a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+        });
+
+        // Update last message in users list
+        setUsers((prevUsers) =>
+          prevUsers.map((u) =>
+            u.chatId === selectedUser.chatId
+              ? { ...u, lastMessage: message }
+              : u
+          )
+        );
       }
-    });
+    };
 
-    // Listen for typing events
-    socket.on("typing", (userId: string) => {
-      if (userId === selectedUser?._id) {
+    socket.onAny((event, ...args) => {
+      console.log(`Socket event: ${event}`, args);
+      // setMessages((prev) => [...prev, event]);2
+    });
+    // Typing indicator handler
+    const handleTypingEvent = ({
+      chatId,
+      userId,
+    }: {
+      chatId: string;
+      userId: string;
+    }) => {
+      if (chatId === selectedUser.chatId && userId !== user?._id) {
         setIsTyping(true);
-        const timer = setTimeout(() => setIsTyping(false), 2000);
-        return () => clearTimeout(timer);
+        if (typingTimeout) clearTimeout(typingTimeout);
+        setTypingTimeout(setTimeout(() => setIsTyping(false), 2000));
       }
-    });
+    };
 
-    // Listen for message read receipts
-    socket.on("messageRead", (messageId: string) => {
+    // Message status updates
+    const handleMessageStatus = ({
+      messageId,
+      status,
+    }: {
+      messageId: string;
+      status: Message["status"];
+    }) => {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === messageId ? { ...msg, status: "read" } : msg
-        )
+        prev.map((msg) => (msg._id === messageId ? { ...msg, status } : msg))
       );
-    });
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("userTyping", handleTypingEvent);
+    socket.on("messageStatus", handleMessageStatus);
 
     return () => {
-      socket.off("newMessage");
-      socket.off("typing");
-      socket.off("messageRead");
+      socket.off("newMessage", handleNewMessage);
+      socket.off("userTyping", handleTypingEvent);
+      socket.off("messageStatus", handleMessageStatus);
+      if (typingTimeout) clearTimeout(typingTimeout);
     };
-  }, [socket, user, selectedUser]);
+  }, [socket, selectedUser, user?._id]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -180,7 +213,7 @@ export default function ChatApp() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Handle sending a message
+  // Send message handler
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || !selectedUser || !user) return;
@@ -189,10 +222,11 @@ export default function ChatApp() {
     const newMessage: Message = {
       _id: tempId,
       content: inputMessage,
-      sender: {_id:user._id,name:""},
+      sender: { _id: user._id, name: user.name, avatar: user.avatar },
       timestamp: new Date(),
       status: "sending",
-      read:""
+      read: false,
+      chatId: selectedUser.chatId,
     };
 
     // Optimistic update
@@ -201,21 +235,16 @@ export default function ChatApp() {
     setShowEmojiPicker(false);
 
     try {
-      // Send message via API
       const response = await api.post(
         `chats/${selectedUser.chatId}/messages`,
+        { content: newMessage.content },
         {
-          content: newMessage.content,
-        },
-        {
-          headers: {
-            "x-csrf-token": await getCsrfToken(),
-          },
+          headers: { "x-csrf-token": await getCsrfToken() },
           withCredentials: true,
         }
       );
 
-      // Replace temp message with actual message from server
+      // Replace temp message with server response
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === tempId ? { ...response.data, status: "sent" } : msg
@@ -225,33 +254,40 @@ export default function ChatApp() {
       // Emit socket event
       if (socket) {
         socket.emit("sendMessage", {
-          recipient: selectedUser._id,
+          chatId: selectedUser.chatId,
           message: response.data,
         });
       }
     } catch (err) {
       console.error("Error sending message:", err);
-      // Remove the optimistic message if sending failed
-      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+      // Mark as failed instead of removing
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg
+        )
+      );
       setError("Failed to send message");
     }
   };
 
-  // Handle typing indicator
+  // Typing indicator handler
   const handleTyping = useCallback(() => {
-    if (socket && selectedUser) {
-      socket.emit("typing", selectedUser._id);
+    if (socket && selectedUser && user) {
+      socket.emit("typing", {
+        chatId: selectedUser.chatId,
+        userId: user._id,
+      });
     }
-  }, [socket, selectedUser]);
+  }, [socket, selectedUser, user]);
 
-  // Handle user selection
+  // User selection handler
   const handleSelectUser = (user: User) => {
-    setselectedUser(user);
+    setSelectedUser(user);
     setShowUserList(false);
     setLoading((prev) => ({ ...prev, messages: true }));
   };
 
-  // Get status color
+  // Helper functions
   const getStatusColor = (status: User["status"]) => {
     switch (status) {
       case "online":
@@ -265,12 +301,8 @@ export default function ChatApp() {
     }
   };
 
-  // Format time
-
-  // Format last seen
   const formatLastSeen = (date?: Date) => {
     if (!date) return "never";
-
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -283,7 +315,6 @@ export default function ChatApp() {
     return `${days} day${days > 1 ? "s" : ""} ago`;
   };
 
-  // Get status icon for message
   const getStatusIcon = (status: Message["status"]) => {
     switch (status) {
       case "sending":
@@ -294,12 +325,13 @@ export default function ChatApp() {
         return <CheckCheck className="h-3 w-3 text-blue-400" />;
       case "read":
         return <CheckCheck className="h-3 w-3 text-green-400" />;
+      case "failed":
+        return <span className="text-red-400 text-xs">Failed</span>;
       default:
         return null;
     }
   };
 
-  // Add emoji to message
   const addEmoji = (emoji: string) => {
     setInputMessage((prev) => prev + emoji);
     inputRef.current?.focus();
@@ -326,20 +358,7 @@ export default function ChatApp() {
       {/* Sidebar */}
       <div className="hidden md:flex flex-col w-80 border-r border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-800">Messages</h1>
-            <button className="p-1 rounded-full hover:bg-gray-100">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-500"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
-                <path d="M10 12a1 1 0 100-2 1 1 0 000 2z" />
-              </svg>
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-gray-800">Messages</h1>
         </div>
 
         {loading.users ? (
@@ -348,9 +367,9 @@ export default function ChatApp() {
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
-            {users?.map((user) => (
+            {users.map((user, index) => (
               <motion.div
-                key={user._id}
+                key={index}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => handleSelectUser(user)}
@@ -362,7 +381,7 @@ export default function ChatApp() {
               >
                 <div className="relative">
                   <img
-                    src={user.avatar}
+                    src={user.avatar || "/default-avatar.png"}
                     alt={user.name}
                     className="h-10 w-10 rounded-full object-cover"
                   />
@@ -377,14 +396,19 @@ export default function ChatApp() {
                     <h3 className="text-sm font-medium text-gray-900">
                       {user.name}
                     </h3>
-                    <span className="text-xs text-gray-500">
-                      {/* {user.lastSeen && formatTime(user.lastSeen)} */}
-                    </span>
+                    {user.lastMessage && (
+                      <span className="text-xs text-gray-500">
+                        {new Date(
+                          user.lastMessage.timestamp
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-500">
-                    {user.status === "online"
-                      ? "Online"
-                      : `Last seen ${formatLastSeen(user.lastSeen)}`}
+                  <p className="text-xs text-gray-500 truncate">
+                    {user.lastMessage?.content || "No messages yet"}
                   </p>
                 </div>
               </motion.div>
@@ -395,7 +419,7 @@ export default function ChatApp() {
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center">
             <img
-              src={user?.avatar}
+              src={user.avatar || "/default-avatar.png"}
               alt={user.name}
               className="h-10 w-10 rounded-full object-cover"
             />
@@ -417,7 +441,7 @@ export default function ChatApp() {
             <>
               <div className="flex items-center">
                 <img
-                  src={selectedUser.avatar}
+                  src={selectedUser.avatar || "/default-avatar.png"}
                   alt={selectedUser.name}
                   className="h-8 w-8 rounded-full object-cover"
                 />
@@ -453,15 +477,15 @@ export default function ChatApp() {
               exit={{ opacity: 0, height: 0 }}
               className="absolute z-10 w-full bg-white shadow-lg max-h-96 overflow-y-auto"
             >
-              {users.map((user) => (
+              {users.map((user, index) => (
                 <div
-                  key={user._id}
+                  key={index}
                   onClick={() => handleSelectUser(user)}
                   className="flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
                 >
                   <div className="relative">
                     <img
-                      src={user.avatar}
+                      src={user.avatar || "/default-avatar.png"}
                       alt={user.name}
                       className="h-8 w-8 rounded-full object-cover"
                     />
@@ -495,7 +519,7 @@ export default function ChatApp() {
           <div className="flex items-center p-4 border-b border-gray-200 bg-white">
             <div className="relative md:hidden">
               <img
-                src={selectedUser.avatar}
+                src={selectedUser.avatar || "/default-avatar.png"}
                 alt={selectedUser.name}
                 className="h-10 w-10 rounded-full object-cover"
               />
@@ -513,6 +537,7 @@ export default function ChatApp() {
                 {selectedUser.status === "online"
                   ? "Online"
                   : `Last seen ${formatLastSeen(selectedUser.lastSeen)}`}
+                {isTyping && " • typing..."}
               </p>
             </div>
           </div>
@@ -536,66 +561,65 @@ export default function ChatApp() {
           ) : (
             <>
               <AnimatePresence>
-                {
-                
-            messages.map((message) => (
-                       <motion.div
-                         key={message._id}
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ duration: 0.2 }}
-                         className={`flex ${
-                           message?.sender?._id === user?._id
-                             ? "justify-end"
-                             : "justify-start"
-                         }`}
-                       >
-                         <div className="flex max-w-[90%] md:max-w-[70%]">
-                           {message.sender._id !== user?._id && (
-                             <img
-                               src={message?.sender?.avatar || "/default-avatar.png"}
-                               alt={message.sender.name}
-                               className="h-8 w-8 rounded-full mt-1 mr-2 self-start"
-                             />
-                           )}
-                           <div
-                             className={`rounded-xl px-4 py-2 ${
-                               message.sender._id === user?._id
-                                 ? "bg-blue-500 text-white rounded-br-none"
-                                 : "bg-white text-gray-800 rounded-bl-none shadow-sm"
-                             }`}
-                           >
-                             {message.sender._id !== user?._id && (
-                               <p className="font-medium text-sm">{message.sender.name}</p>
-                             )}
-                             <p className={message.sender._id !== user?._id ? "mt-1" : ""}>
-                               {message.content}
-                             </p>
-                             <p
-                               className={`text-xs mt-1 flex items-center justify-end space-x-1 ${
-                                 message.sender._id === user?._id
-                                   ? "text-blue-100"
-                                   : "text-gray-500"
-                               }`}
-                             >
-                               
-                               {message.sender._id === user?._id && (
-                                 <span>
-                                   {message.read ? (
-                                     <span className="text-blue-300">✓✓</span>
-                                   ) : (
-                                     <span>✓</span>
-                                   )}
-                                 </span>
-                               )}
-                             </p>
-                           </div>
-                         </div>
-                       </motion.div>
-                     ))
-                
-                
-                }
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={`flex ${
+                      message?.sender?._id === user._id
+                        ? "justify-end"
+                        : "justify-start"
+                    } mb-3`}
+                  >
+                    <div className="flex max-w-[90%] md:max-w-[70%]">
+                      {message?.sender?._id !== user._id && (
+                        <img
+                          src={message?.sender?.avatar || "/default-avatar.png"}
+                          alt={message?.sender?.name}
+                          className="h-8 w-8 rounded-full mt-1 mr-2 self-start"
+                        />
+                      )}
+                      <div
+                        className={`rounded-xl px-4 py-2 ${
+                          message?.sender?._id === user._id
+                            ? "bg-blue-500 text-white rounded-br-none"
+                            : "bg-white text-gray-800 rounded-bl-none shadow-sm"
+                        }`}
+                      >
+                        {message?.sender?._id !== user._id && (
+                          <p className="font-medium text-sm">
+                            {message?.sender?.name}
+                          </p>
+                        )}
+                        <p
+                          className={
+                            message?.sender?._id !== user._id ? "mt-1" : ""
+                          }
+                        >
+                          {message.content}
+                        </p>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-xs opacity-70">
+                            {new Date(message.timestamp).toLocaleTimeString(
+                              [],
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                          {message?.sender?._id === user._id && (
+                            <span className="ml-2">
+                              {getStatusIcon(message.status)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </AnimatePresence>
 
               {isTyping && selectedUser && (
@@ -605,7 +629,7 @@ export default function ChatApp() {
                   className="flex mb-4 justify-start"
                 >
                   <img
-                    src={selectedUser.avatar}
+                    src={selectedUser.avatar || "/default-avatar.png"}
                     alt="User"
                     className="h-8 w-8 rounded-full object-cover mr-2 self-end"
                   />
@@ -680,9 +704,11 @@ export default function ChatApp() {
                           "🎉",
                           "🤔",
                           "😎",
-                        ].map((emoji) => (
+                          "🙏",
+                          "😢",
+                        ].map((emoji, index) => (
                           <button
-                            key={emoji}
+                            key={index}
                             type="button"
                             onClick={() => addEmoji(emoji)}
                             className="text-xl p-1 hover:bg-gray-100 rounded"

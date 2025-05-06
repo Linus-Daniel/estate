@@ -137,7 +137,7 @@ export const PropertyProvider: React.FC<ProviderProps> = ({ children }) => {
     try {
       await api.delete(`/properties/${id}`,{
         headers:{
-            "x-csrf-token":localStorage.getItem("csrfToken") || await getCsrfToken()
+            "x-csrf-token": await getCsrfToken()
         },
         withCredentials:true
       });

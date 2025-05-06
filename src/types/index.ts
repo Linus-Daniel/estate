@@ -45,3 +45,46 @@ export interface PaymentPropsTypes {
     email:string;
     propertyId:string
 }
+
+
+
+
+export type Message = {
+    _id: string;
+    chat: string;
+    sender: {
+      _id: string;
+      name: string;
+      avatar?: string;
+    };
+    content: string;
+    read: boolean;
+    readAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  
+ export  type TypingEvent = {
+    chatId: string;
+    userId: string;
+  };
+  
+ export  type SendMessageCallback = (response: {
+    status: 'success' | 'error';
+    message?: Message;
+    error?: string;
+  }) => void;
+
+
+  
+  export interface Transaction {
+    _id: string;
+    user: string;
+    property: Property | string;
+    amount: number;
+    status: "pending" | "completed" | "failed";
+    transactionId: string;
+    paymentMethod: string;
+    createdAt: string;
+    __v: number;
+  }

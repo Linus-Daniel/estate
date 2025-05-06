@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth_context";
 import Header from "@/components/sections/header";
 import { PropertyProvider } from "@/context/PropertyContext";
+import { SocketProvider } from "@/context/socketContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <PropertyProvider>
-            {/* <Header /> */}
-            <main className="">{children}</main>
-          </PropertyProvider>
+          <SocketProvider>
+            <PropertyProvider>
+              {/* <Header /> */}
+              <main className="">{children}</main>
+            </PropertyProvider>
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>

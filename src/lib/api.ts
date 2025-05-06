@@ -2,11 +2,10 @@ import { PaymentPropsTypes } from "@/types";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:"https://estate-backend-qlai.onrender.com/api/v1",
-  // baseURL: "http://localhost:5000/api/v1",
-  headers: {
-    "Content-Type": "application/json; charset=utf-8",
-  },
+  // baseURL: "https://estate-backend-qlai.onrender.com/api/v1",
+  baseURL: "http://localhost:5000/api/v1",
+  headers: {},
+  withCredentials: true,
 });
 
 export default api;
@@ -69,10 +68,9 @@ interface UploadResponse {
 export const register = async (userData: UserData) => {
   try {
     const csrfToken = await getCsrfToken();
-    console.log(csrfToken)
+    console.log(csrfToken);
     const response = await api.post("/auth/register", userData, {
       headers: {
-        "Content-Type": "application/json",
         "x-csrf-token": csrfToken,
       },
       withCredentials: true,
@@ -90,16 +88,17 @@ export const register = async (userData: UserData) => {
 export const login = async (loginData: LoginData) => {
   try {
     const csrfToken = await getCsrfToken();
-    console.log(csrfToken)
+    console.log(csrfToken);
     localStorage.setItem("csrfToken", csrfToken);
 
+    console.log("atempting login in....", loginData);
     const response = await api.post("/auth/login", loginData, {
       headers: {
-        "Content-Type": "application/json",
         "x-csrf-token": csrfToken,
       },
       withCredentials: true,
     });
+    console.log(response);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -220,14 +219,17 @@ export const deleteImage = async (
 export const handlePayment = async ({
   propertyId,
   email,
-  
 }: PaymentPropsTypes) => {
   try {
     const csrfToken = await getCsrfToken();
     console.log(csrfToken);
     const res = await api.post(
       "/payments/initialize",
-      { propertyId, email: email, callback_url:"http://localhost:3000/user/payment" },
+      {
+        propertyId,
+        email: email,
+        callback_url: "http://localhost:3000/user/payment",
+      },
       {
         headers: {
           "x-csrf-token": csrfToken,
@@ -247,5 +249,43 @@ export const handlePayment = async ({
       error.response?.data || error.message
     );
     alert("Unable to initialize payment. Please try again.");
+  }
+};
+
+export const getUserTransactions = async (userId: string) => {
+  const csrfToken = await getCsrfToken();
+  try {
+    const response = await api.get(`/payments/transactions/${userId}`, {
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+      withCredentials: true,
+    });
+
+    console.log(response.data?.data);
+
+    return response.data.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getUserTransactionById = async (id: string) => {
+  const csrfToken = await getCsrfToken();
+  console.log(csrfToken, localStorage.getItem("token"))
+
+  try {
+    const response = await api.get(`/payments/transaction/${id}`, {
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+      withCredentials: true,
+    });
+
+    console.log(response);
+
+    return response.data.data;
+  } catch (error) {
+    console.log(error);
   }
 };

@@ -1,6 +1,16 @@
 "use client";
 import { useState } from "react";
-import { Lock, User, Mail, Eye, EyeOff, Briefcase, Key, LogIn, UserPlus } from "lucide-react";
+import {
+  Lock,
+  User,
+  Mail,
+  Eye,
+  EyeOff,
+  Briefcase,
+  Key,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
 import { useAuth } from "@/context/auth_context";
 
 type AuthMode = "signin" | "signup";
@@ -20,41 +30,40 @@ export default function AuthForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { login, register, loading, error } = useAuth();
 
-  const handleDummyLogin = (role: 'tenant' | 'agent') => {
+  const handleDummyLogin = (role: "tenant" | "agent") => {
     const credentials = {
-      'tenant': { email: 'tenant@example.com', password: 'password123' },
-      'agent': { email: 'agent@example.com', password: 'password123' }
+      tenant: { email: "tenant@example.com", password: "password123" },
+      agent: { email: "agent@example.com", password: "password123" },
     };
     login(credentials[role].email, credentials[role].password);
   };
 
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Email is invalid";
     }
-    
+
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     if (mode === "signup") {
       if (!formData.name) {
         newErrors.name = "Name is required";
@@ -63,13 +72,13 @@ export default function AuthForm() {
         newErrors.confirmPassword = "Passwords don't match";
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log(formData)
+    console.log(formData);
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -89,7 +98,7 @@ export default function AuthForm() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role // Include the selected role here
+          role, // Include the selected role here
         });
       } catch (err) {
         console.error(err);
@@ -103,16 +112,14 @@ export default function AuthForm() {
         email: "",
         password: "",
         name: "",
-        confirmPassword: ""
+        confirmPassword: "",
       });
       setMode("signin");
     }
   };
 
-
-
   const toggleMode = () => {
-    setMode(prev => prev === "signin" ? "signup" : "signin");
+    setMode((prev) => (prev === "signin" ? "signup" : "signin"));
     setErrors({});
   };
 
@@ -131,20 +138,23 @@ export default function AuthForm() {
               {mode === "signin" ? "Welcome Back" : "Create Account"}
             </h1>
             <p className="opacity-90 mt-1">
-              {mode === "signin" 
-                ? "Sign in to access your account" 
+              {mode === "signin"
+                ? "Sign in to access your account"
                 : "Join us to get started"}
             </p>
           </div>
 
           {/* Role Selector */}
-          <div className={`px-6 ${mode ==="signin" && "hidden"} pt-4`}>
+          <div className={`px-6 ${mode === "signin" && "hidden"} pt-4`}>
             <div className="flex justify-between bg-gray-100 rounded-lg p-1">
               {(["agent", "user"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"
-                  onClick={() => {setRole(r);console.log(role)}}
+                  onClick={() => {
+                    setRole(r);
+                    console.log(role);
+                  }}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                     role === r
                       ? "bg-white shadow-sm text-indigo-600"
@@ -161,7 +171,10 @@ export default function AuthForm() {
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {mode === "signup" && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Full Name
                 </label>
                 <div className="relative">
@@ -187,7 +200,10 @@ export default function AuthForm() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -212,7 +228,10 @@ export default function AuthForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password
               </label>
               <div className="relative">
@@ -249,7 +268,10 @@ export default function AuthForm() {
 
             {mode === "signup" && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -264,7 +286,9 @@ export default function AuthForm() {
                     onChange={handleChange}
                     placeholder="••••••••"
                     className={`w-full pl-10 pr-10 py-2 border ${
-                      errors.confirmPassword ? "border-red-300" : "border-gray-300"
+                      errors.confirmPassword
+                        ? "border-red-300"
+                        : "border-gray-300"
                     } rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-colors`}
                   />
                   <button
@@ -280,7 +304,9 @@ export default function AuthForm() {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
             )}
@@ -294,12 +320,18 @@ export default function AuthForm() {
                     type="checkbox"
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-700"
+                  >
                     Remember me
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  <a
+                    href="#"
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
                     Forgot password?
                   </a>
                 </div>
@@ -315,9 +347,25 @@ export default function AuthForm() {
             >
               {isSubmitting ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Processing...
                 </>
@@ -327,8 +375,6 @@ export default function AuthForm() {
                     <>
                       <LogIn className="h-5 w-5 mr-2" />
                       Sign In
-
-            
                     </>
                   ) : (
                     <>
@@ -344,7 +390,9 @@ export default function AuthForm() {
           {/* Footer */}
           <div className="px-6 pb-6 text-center">
             <p className="text-sm text-gray-600">
-              {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
+              {mode === "signin"
+                ? "Don't have an account?"
+                : "Already have an account?"}{" "}
               <button
                 type="button"
                 onClick={toggleMode}
@@ -368,8 +416,10 @@ export default function AuthForm() {
                 {role === "agent" && "Administrator Account"}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                {role === "user" && "Access basic features and personal dashboard"}
-                {role === "agent" && "Full system access with administrative privileges"}
+                {role === "user" &&
+                  "Access basic features and personal dashboard"}
+                {role === "agent" &&
+                  "Full system access with administrative privileges"}
               </p>
             </div>
           </div>
