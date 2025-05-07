@@ -2,33 +2,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSocket } from "@/context/socketContext";
 import { useAuth } from "@/context/auth_context";
-import {
-  Send,
-  Loader2,
-  Smile,
-  Image,
-  Paperclip,
-  Mic,
-  CheckCheck,
-} from "lucide-react";
+import { Send, Loader2, Smile, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import api, { getCsrfToken } from "@/lib/api";
+import { Message } from "@/types";
 
-interface Message {
-  _id: string;
-  sender: {
-    _id: string;
-    name: string;
-    photo?: string;
-  };
-  content: string;
-  createdAt: string;
-  read: boolean;
-  chatId: string;
-}
 
 interface ChatInfo {
   _id: string;
@@ -53,146 +33,159 @@ export default function ChatWindow() {
   const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const { user } = useAuth();
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, connectionState,
+    joinChat,
+    sendMessage,
+    sendTyping,
+    offNewMessage,
+    offUserTyping,
+    onError,
+    onUserTyping,
+    onNewMessage,
+    offError,
+    arrivedMessage,
+    isTyping
+  } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const params = useParams();
   const router = useRouter();
-
+  
   const chatId = params.chatId as string;
 
+  console.log("user chat page new message",arrivedMessage)
+  
+  // useEffect(()=>{
+  //   console.log("New Message",arrivedMessage)
+  //   !arrivedMessage ?console.log("messaee not here yet"):console.log("message incoming")
+  
+  //   arrivedMessage && setMessages(prev=>[...prev,arrivedMessage])
+  // },[arrivedMessage])
 
   // Fetch chat data
-  const fetchChatData = useCallback(async () => {
-    try {
-      setLoading(true);
+// Fetch chat data
+const fetchChatData = useCallback(async () => {
+  try {
+    // setLoading(true);
 
-      // Fetch messages
-      const messagesRes = await api.get(`/chats/${chatId}/messages`, {
-        headers: { "x-csrf-token": await getCsrfToken() },
-        withCredentials: true,
-      });
-
-      setMessages(messagesRes.data.data);
-    } catch (err) {
-      console.error("Error fetching chat data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [chatId]);
-
-  // Initialize chat
-  useEffect(() => {
-    if (chatId) {
-      fetchChatData();
-    }
-  }, [chatId, fetchChatData]);
-
-  // Socket event handlers
-  const handleNewMessage = useCallback(
-    (message: Message) => {
-      if (message.chatId === chatId) {
-        setMessages((prev) => [...prev, message]);
-      }
-    },
-    [chatId]
-  );
-
-  const handleTypingEvent = useCallback(() => {
-    setOtherUserTyping(true);
-    const timer = setTimeout(() => setOtherUserTyping(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Setup socket listeners
-  useEffect(() => {
-    if (!socket || !chatId || !isConnected) return;
-
-    console.log("Setting up socket listeners for chat:", chatId);
-
-    socket.emit("joinChat", chatId);
-    socket.on("newMessage", handleNewMessage);
-    socket.on("userTyping", handleTypingEvent);
-
-    // Debugging
-    socket.onAny((event, ...args) => {
-      console.log(`Socket event: ${event}`, args);
-        // setMessages(prev=>[...prev,event]) 
+    const messagesRes = await api.get(`/chats/${chatId}/messages`, {
+      headers: { "x-csrf-token": await getCsrfToken() },
+      withCredentials: true,
     });
 
-    return () => {
-      socket.off("newMessage", handleNewMessage);
-      socket.off("userTyping", handleTypingEvent);
-      socket.emit("leaveChat", chatId);
-    };
-  }, [socket, chatId, isConnected, handleNewMessage, handleTypingEvent]);
+    setMessages(messagesRes.data.data);
+  } catch (err) {
+    console.error("Error fetching chat data:", err);
+  } finally {
+    setLoading(false);
+  }
+}, [chatId,arrivedMessage]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+// Initialize chat
+useEffect(() => {
+  if (chatId) {
+    fetchChatData();
+  }
+}, [chatId, fetchChatData, arrivedMessage]);
 
-  // Handle typing indicator
-  const handleTyping = useCallback(() => {
-    if (socket && chatId && isConnected) {
-      socket.emit("typing", chatId);
+// Handle new message
+const handleNewMessage = useCallback(
+  (message: Message) => {
+    if (message.chatId === chatId) {
+      setMessages((prev) => [...prev, message]);
     }
-  }, [socket, chatId, isConnected]);
+  },
+  [chatId]
+);
 
-  // Handle sending message
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user || !chatId || !socket) return;
 
-    const tempId = Date.now().toString();
-    const tempMessage: Message = {
-      _id: tempId,
-      sender: {
-        _id: user._id,
-        name: user.name,
-        photo: user.avatar,
-      },
-      content: newMessage,
-      createdAt: new Date().toISOString(),
-      read: false,
-      chatId,
-    };
 
-    // Optimistic update
-    setMessages((prev) => [...prev, tempMessage]);
-    setNewMessage("");
-    setShowEmojiPicker(false);
-    setSending(true);
+// Typing event with timeout cleanup
+const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    try {
-      const res = await api.post(
-        `chats/${chatId}/messages`,
-        { content: newMessage },
-        {
-          headers: { "x-csrf-token": await getCsrfToken() },
-          withCredentials: true,
-        }
-      );
+const handleTypingEvent = useCallback(() => {
+  setOtherUserTyping(true);
+  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+  typingTimeoutRef.current = setTimeout(() => {
+    setOtherUserTyping(false);
+  }, 2000);
+}, []);
 
-      // Replace temp message with server response
-      setMessages((prev) =>
-        prev.map((msg) => (msg._id === tempId ? res.data.data : msg))
-      );
 
-      // Emit socket event
-      socket.emit("sendMessage", {
-        chatId,
-        message: res.data.data,
-        recipientId: otherParticipant?._id,
-      });
-    } catch (err) {
-      console.error("Error sending message:", err);
-      // Rollback optimistic update
-      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
-    } finally {
+// Setup socket listeners
+useEffect(() => {
+  if (!socket || !chatId || !isConnected) return;
+
+  console.log("Setting up socket listeners for chat:", chatId);
+  joinChat(chatId);
+  onNewMessage(handleNewMessage);
+  onUserTyping(handleTypingEvent);
+
+  // Debugging
+  socket.onAny((event, ...args) => {
+    console.log(`Socket event: ${event}`, args);
+  });
+
+  return () => {
+    offNewMessage(handleNewMessage);
+    offUserTyping(handleTypingEvent);
+    socket.emit("leaveChat", chatId);
+  };
+}, [socket, chatId, isConnected, handleNewMessage, handleTypingEvent]);
+
+// Scroll to bottom when messages change
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
+
+// Emit typing indicator
+const handleTyping = useCallback(() => {
+  if (socket && chatId && isConnected) {
+    socket.emit("typing", chatId);
+  }
+}, [socket, chatId, isConnected]);
+
+const handleSendMessage = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!newMessage.trim() || !user || !chatId || !socket) return;
+
+  const tempId = Date.now().toString();
+  const tempMessage:  Partial<Message> = {
+    _id: tempId,
+    sender: {
+      _id: user._id,
+      name: user.name,
+      avatar: user.avatar,
+    },
+    content: newMessage,
+    read: false,
+    chatId,
+  };
+
+  // Optimistic UI update
+  setMessages((prev) => [...prev, tempMessage as Message]);
+  setNewMessage("");
+  setShowEmojiPicker(false);
+  setSending(true);
+
+  // Send message via socket
+  socket.emit(
+    "sendMessage",
+    { chatId, content: newMessage },
+    (response: { status: string; message?: Message }) => {
+      if (response.status === "success" && response.message) {
+        setMessages((prev) =>
+          prev.map((msg) => (msg._id === tempId ? response.message! : msg))
+        );
+      } else {
+        console.error("Message send failed:", response.message);
+        setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+      }
       setSending(false);
     }
-  };
+  );
+};
+
 
   // Get other participant in chat
   const getOtherParticipant = () => {
@@ -303,9 +296,9 @@ export default function ChatWindow() {
             </p>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message,index) => (
             <motion.div
-              key={message._id}
+              key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
@@ -318,7 +311,7 @@ export default function ChatWindow() {
               <div className="flex max-w-[90%] md:max-w-[70%]">
                 {message.sender?._id !== user?._id && (
                   <img
-                    src={message.sender?.photo || "/default-avatar.png"}
+                    src={message.sender?.avatar || "/default-avatar.png"}
                     alt={message.sender?.name}
                     className="h-8 w-8 rounded-full mt-1 mr-2 self-start"
                   />
@@ -331,9 +324,13 @@ export default function ChatWindow() {
                   }`}
                 >
                   {message.sender?._id !== user?._id && (
-                    <p className="font-medium text-sm">{message.sender?.name}</p>
+                    <p className="font-medium text-sm">
+                      {message.sender?.name}
+                    </p>
                   )}
-                  <p className={message.sender?._id !== user?._id ? "mt-1" : ""}>
+                  <p
+                    className={message.sender?._id !== user?._id ? "mt-1" : ""}
+                  >
                     {message.content}
                   </p>
                   <p
@@ -365,7 +362,7 @@ export default function ChatWindow() {
         )}
 
         <AnimatePresence>
-          {otherUserTyping && otherParticipant && (
+          {isTyping && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -373,11 +370,7 @@ export default function ChatWindow() {
               className="flex justify-start"
             >
               <div className="flex max-w-[90%] md:max-w-[70%]">
-                <img
-                  src={otherParticipant.photo || "/default-avatar.png"}
-                  alt={otherParticipant.name}
-                  className="h-8 w-8 rounded-full mt-1 mr-2 self-start"
-                />
+                
                 <div className="bg-white text-gray-800 rounded-xl rounded-bl-none shadow-sm px-4 py-2">
                   <div className="flex space-x-1">
                     <div

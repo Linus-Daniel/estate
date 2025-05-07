@@ -3,7 +3,6 @@ import api from "@/lib/api"; // adjust to your actual api path
 
 export const uploadImageGroup = async (
   fileArray: File[],
-  csrfToken: string,
   token: string,
   onUploadProgress: (percent: number) => void
 ) => {
@@ -15,7 +14,6 @@ export const uploadImageGroup = async (
       return api.post("/upload", fileFormData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "x-csrf-token": csrfToken,
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true,

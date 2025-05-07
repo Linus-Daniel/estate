@@ -44,7 +44,7 @@ export default function ProtectedRoute({
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, loading, router, user, requiredRole]);
+  }, [isAuthenticated, loading, router, user, requiredRole,user?._id]);
 
   if (loading) {
     return (

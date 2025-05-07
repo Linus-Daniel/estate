@@ -143,13 +143,13 @@ export default function AddProperty() {
     setUploadProgress(0);
   
     try {
-      const csrfToken = await getCsrfToken();
+    
       const allUploadedImages: { public_id: string; url: string }[] = [];
   
       for (const [, fileArray] of fileGroups) {
         const results = await uploadImageGroup(
           fileArray as File[],
-          csrfToken,
+          
           token,
           setUploadProgress
         );
@@ -174,7 +174,7 @@ export default function AddProperty() {
       const response = await api.post("/properties", propertyData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "x-csrf-token": csrfToken,
+  
         },
         withCredentials: true,
       });

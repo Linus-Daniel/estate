@@ -16,6 +16,9 @@ interface SocketContextType {
   onError: (callback: (error: Error) => void) => void;
   offError: (callback: (error: Error) => void) => void;
   joinChat: (chatId: string) => void;
+  arrivedMessage: Partial<Message>;
+  isTyping:boolean
+
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -31,6 +34,14 @@ const SocketContext = createContext<SocketContextType>({
   onError: () => {},
   offError: () => {},
   joinChat: () => {},
+  arrivedMessage:{
+    _id:"",
+    chat:"",
+    content:"",
+    read:false,
+  },
+  isTyping:false
+
 });
 
 export const useSocket = () => useContext(SocketContext);
@@ -42,6 +53,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
   const socketRef = useRef<Socket | null>(null);
+  const [arrivedMessage,setArrivedMessage] = useState({
+
+  })
+
+  const [isTyping,setIsTyping] = useState<boolean>(true)
 
   useEffect(() => {
     const socketInstance = io(
@@ -110,6 +126,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const joinChat = (chatId: string) => {
     socket?.emit("joinChat", chatId);
+    console.log("user joint the chat", chatId)
   };
 
   const sendMessage = (
@@ -117,7 +134,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     content: string,
     callback: SendMessageCallback
   ) => {
-    socket?.emit("sendMessage", { chatId, content }, callback);
+    socket?.emit("sendMessage", { chatId, content }, callback,);
+    console.log("message sent",content)
+  
   };
 
   const sendTyping = (chatId: string, isTyping: boolean) => {
@@ -125,19 +144,26 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const onNewMessage = (callback: (message: Message) => void) => {
-    socket?.on("newMessage", callback);
-  };
+    socket?.on("newMessage", (message: Message) => {
+      callback(message);  
+      console.log("message recieved",message)        // optionally pass to external handler
+      setArrivedMessage(message);
+    });
 
+  };
+  
   const offNewMessage = (callback: (message: Message) => void) => {
     socket?.off("newMessage", callback);
   };
 
   const onUserTyping = (callback: (event: TypingEvent) => void) => {
     socket?.on("userTyping", callback);
+    // setIsTyping(true)
   };
 
   const offUserTyping = (callback: (event: TypingEvent) => void) => {
     socket?.off("userTyping", callback);
+    setIsTyping(false)
   };
 
   const onError = (callback: (error: Error) => void) => {
@@ -162,9 +188,14 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       onError,
       offError,
       joinChat,
+      arrivedMessage,
+      isTyping
     }),
-    [socket, isConnected, connectionState]
+    [socket, isConnected, connectionState,arrivedMessage,isTyping]
   );
+
+
+  console.log("new arrived message",arrivedMessage)
 
   return (
     <SocketContext.Provider value={contextValue}>

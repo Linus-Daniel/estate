@@ -62,6 +62,7 @@ export type Message = {
     readAt?: Date;
     createdAt: Date;
     updatedAt: Date;
+    chatId:string
   };
   
  export  type TypingEvent = {

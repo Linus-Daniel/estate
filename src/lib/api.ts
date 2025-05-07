@@ -36,9 +36,14 @@ export default api
 // Example using fetch
 export async function getCsrfToken() {
   try {
-    const response = await api.get("/csrf-token", {
-      withCredentials: true, // send cookies
-    });
+  //   const response = await api.get("/csrf-token", {
+  //     withCredentials: true, // send cookies
+  //   });
+  const response = {
+    data:{
+      csrfToken:""
+    }
+  }
     return response.data.csrfToken;
   } catch (error) {
     console.error(error);
@@ -112,7 +117,6 @@ export const login = async (loginData: LoginData) => {
   try {
     const csrfToken = await getCsrfToken();
     console.log(csrfToken);
-    localStorage.setItem("csrfToken", csrfToken);
 
     console.log("atempting login in....", loginData);
     const response = await api.post("/auth/login", loginData, {
