@@ -45,7 +45,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const socketInstance = io(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
+      process.env.NODE_ENV ==="production"?"https://estate-backend-4hk1.onrender.com": "http://localhost:5000",
       {
         path: "/socket.io",
         withCredentials: true,
