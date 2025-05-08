@@ -62,7 +62,8 @@ export type Message = {
     readAt?: Date;
     createdAt: Date;
     updatedAt: Date;
-    chatId:string
+    chatId:string;
+    status:string;
   };
   
  export  type TypingEvent = {
@@ -88,4 +89,18 @@ export type Message = {
     paymentMethod: string;
     createdAt: string;
     __v: number;
+  }
+
+  export interface ChatInfo {
+    _id: string;
+    participants: {
+      _id: string;
+      name: string;
+      photo?: string;
+    }[];
+    property?: {
+      _id: string;
+      title: string;
+      images: { url: string }[];
+    };
   }

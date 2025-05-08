@@ -146,3 +146,13 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+@font-face {
+  font-family:poppins ;
+  src: url("/public/fonts/Poppins-Regular.ttf");
+}
+
+
+*{
+  /* font-family: poppins; */
+}

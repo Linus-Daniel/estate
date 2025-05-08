@@ -5,12 +5,9 @@ import {
   Smile,
   Mic,
   Paperclip,
-  ChevronDown,
   Loader2,
   CheckCheck,
-  UserRound,
   User,
-  CircleUserRound,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -18,22 +15,9 @@ import { useSocket } from "@/context/socketContext";
 import { useAuth } from "@/context/auth_context";
 import api, { getCsrfToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { Property } from "@/types";
+import { ChatInfo, Message, Property } from "@/types";
 import Image from "next/image";
 
-type Message = {
-  _id: string;
-  content: string;
-  sender: {
-    _id: string;
-    name: string;
-    avatar?: string;
-  };
-  timestamp: Date;
-  read: boolean;
-  status: "sending" | "sent" | "delivered" | "read" | "failed";
-  chatId: string;
-};
 
 type User = {
   _id: string;
@@ -48,17 +32,13 @@ type User = {
 
 export default function ChatApp() {
   const { user } = useAuth();
-  const { socket } = useSocket();
 
   // State
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
   const [loading, setLoading] = useState({
@@ -70,7 +50,31 @@ export default function ChatApp() {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [messagesContainer] = useAutoAnimate<HTMLDivElement>();
+
+  const [sending, setSending] = useState(false);
+  const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
+  const {
+    socket,
+    isConnected,
+    connectionState,
+    joinChat,
+    sendMessage,
+    sendTyping,
+    offNewMessage,
+    offUserTyping,
+    onError,
+    onUserTyping,
+    onNewMessage,
+    offError,
+    arrivedMessage,
+    isTyping,
+  } = useSocket();
+  const router = useRouter();
+
+  console.log("user chat page new message", arrivedMessage);
 
   // Fetch users and initial data
   useEffect(() => {
@@ -120,7 +124,7 @@ export default function ChatApp() {
 
         const sortedMessages = response.data.data.sort(
           (a: Message, b: Message) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
 
         setMessages(sortedMessages);
@@ -132,82 +136,50 @@ export default function ChatApp() {
     };
 
     fetchMessages();
-  }, [selectedUser]);
+  }, [selectedUser,arrivedMessage]);
 
-  // Socket event handlers
-  useEffect(() => {
-    if (!socket || !selectedUser) return;
-
-    // Join the chat room
-    socket.emit("joinChat", selectedUser.chatId);
-
-    // New message handler
-    const handleNewMessage = (message: Message) => {
-      if (message.chatId === selectedUser.chatId) {
-        setMessages((prev) => {
-          // Prevent duplicates
-          if (prev.some((m) => m._id === message._id)) return prev;
-          return [...prev, message].sort(
-            (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
-        });
-
-        // Update last message in users list
-        setUsers((prevUsers) =>
-          prevUsers.map((u) =>
-            u.chatId === selectedUser.chatId
-              ? { ...u, lastMessage: message }
-              : u
-          )
-        );
+  const handleNewMessage = useCallback(
+    (message: Message) => {
+      if (message?.chatId === selectedUser?.chatId) {
+        setMessages((prev) => [...prev, message]);
       }
-    };
-
+    },
+    [selectedUser?.chatId]
+  );
+  // Socket event handlers
+  const handleTypingEvent = useCallback(() => {
+    setOtherUserTyping(true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      setOtherUserTyping(false);
+    }, 2000);
+  }, []);
+  useEffect(() => {
+    if (!socket || !selectedUser?.chatId || !isConnected) return;
+  
+    console.log("Setting up socket listeners for chat:", selectedUser.chatId);
+    joinChat(selectedUser.chatId);
+    onNewMessage(handleNewMessage);
+    onUserTyping(handleTypingEvent);
+  
+    // Debugging
     socket.onAny((event, ...args) => {
       console.log(`Socket event: ${event}`, args);
-      // setMessages((prev) => [...prev, event]);2
     });
-    // Typing indicator handler
-    const handleTypingEvent = ({
-      chatId,
-      userId,
-    }: {
-      chatId: string;
-      userId: string;
-    }) => {
-      if (chatId === selectedUser.chatId && userId !== user?._id) {
-        setIsTyping(true);
-        if (typingTimeout) clearTimeout(typingTimeout);
-        setTypingTimeout(setTimeout(() => setIsTyping(false), 2000));
-      }
-    };
-
-    // Message status updates
-    const handleMessageStatus = ({
-      messageId,
-      status,
-    }: {
-      messageId: string;
-      status: Message["status"];
-    }) => {
-      setMessages((prev) =>
-        prev.map((msg) => (msg._id === messageId ? { ...msg, status } : msg))
-      );
-    };
-
-    socket.on("newMessage", handleNewMessage);
-    socket.on("userTyping", handleTypingEvent);
-    socket.on("messageStatus", handleMessageStatus);
-
+  
     return () => {
-      socket.off("newMessage", handleNewMessage);
-      socket.off("userTyping", handleTypingEvent);
-      socket.off("messageStatus", handleMessageStatus);
-      if (typingTimeout) clearTimeout(typingTimeout);
+      offNewMessage(handleNewMessage); // <-- FIXED: Don't call the function
+      offUserTyping(handleTypingEvent); // <-- Also make sure this is correct
+      socket.emit("leaveChat", selectedUser.chatId);
     };
-  }, [socket, selectedUser, user?._id]);
-
+  }, [
+    socket,
+    selectedUser?.chatId,
+    isConnected,
+    handleNewMessage,
+    handleTypingEvent,
+  ]);
+  
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
@@ -220,60 +192,46 @@ export default function ChatApp() {
   // Send message handler
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !selectedUser || !user) return;
+
+    const chatId = selectedUser?.chatId;
+    if (!inputMessage.trim() || !user || !chatId || !socket) return;
 
     const tempId = Date.now().toString();
-    const newMessage: Message = {
+    const tempMessage: Partial<Message> = {
       _id: tempId,
+      sender: {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+      },
       content: inputMessage,
-      sender: { _id: user._id, name: user.name, avatar: user.avatar },
-      timestamp: new Date(),
-      status: "sending",
       read: false,
-      chatId: selectedUser.chatId,
+      // selectedUser?.chatId
     };
 
-    // Optimistic update
-    setMessages((prev) => [...prev, newMessage]);
+    // Optimistic UI update
+    setMessages((prev) => [...prev, tempMessage as Message]);
     setInputMessage("");
     setShowEmojiPicker(false);
+    setSending(true);
 
-    try {
-      const response = await api.post(
-        `chats/${selectedUser.chatId}/messages`,
-        { content: newMessage.content },
-        {
-          headers: { "x-csrf-token": await getCsrfToken() },
-          withCredentials: true,
+    // Send message via socket
+    socket.emit(
+      "sendMessage",
+      { chatId, content: inputMessage },
+      (response: { status: string; message?: Message }) => {
+        if (response.status === "success" && response.message) {
+          setMessages((prev) =>
+            prev.map((msg) => (msg._id === tempId ? response.message! : msg))
+          );
+        } else {
+          console.error("Message send failed:", response.message);
+          setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
         }
-      );
-
-      // Replace temp message with server response
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === tempId ? { ...response.data, status: "sent" } : msg
-        )
-      );
-
-      // Emit socket event
-      if (socket) {
-        socket.emit("sendMessage", {
-          chatId: selectedUser.chatId,
-          message: response.data,
-        });
+        setSending(false);
       }
-    } catch (err) {
-      console.error("Error sending message:", err);
-      // Mark as failed instead of removing
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === tempId ? { ...msg, status: "failed" } : msg
-        )
-      );
-      setError("Failed to send message");
-    }
+    );
   };
-
   // Typing indicator handler
   const handleTyping = useCallback(() => {
     if (socket && selectedUser && user) {
@@ -357,8 +315,7 @@ export default function ChatApp() {
     );
   }
 
-
-  console.log(messages)
+  console.log(messages);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -408,7 +365,7 @@ export default function ChatApp() {
                     {user.lastMessage && (
                       <span className="text-xs text-gray-500">
                         {new Date(
-                          user.lastMessage.timestamp
+                          user.lastMessage?.createdAt
                         ).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -442,15 +399,11 @@ export default function ChatApp() {
         </div>
       </div>
 
-
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
-      {/* Mobile user selector */}
-      <div className="md:hidden relative">
-
-
-        <AnimatePresence>
-        
+        {/* Mobile user selector */}
+        <div className="md:hidden relative">
+          <AnimatePresence>
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -469,7 +422,7 @@ export default function ChatApp() {
                       alt={user.name}
                       className="h-8 w-8 rounded-full object-cover"
                       width={200}
-                    height={200}
+                      height={200}
                     />
                     <span
                       className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-white ${getStatusColor(
@@ -481,20 +434,20 @@ export default function ChatApp() {
                     <h3 className="text-sm font-medium text-gray-900">
                       {user.property.title}
                     </h3>
-                    
                   </div>
                 </div>
               ))}
             </motion.div>
-        
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+        </div>
         {/* Chat header */}
         {selectedUser ? (
           <div className="flex items-center p-4 border-b border-gray-200 bg-white">
             <div className="relative md:hidden">
               <img
-                src={selectedUser.property.images[0].url || "/default-avatar.png"}
+                src={
+                  selectedUser.property.images[0].url || "/default-avatar.png"
+                }
                 alt={selectedUser.property.title}
                 className="h-10 w-10 rounded-full object-cover"
               />
@@ -509,8 +462,8 @@ export default function ChatApp() {
                 {selectedUser.property.title}
               </h2>
               <p className="text-xs">
-                    <span>Agent:</span> {selectedUser.name}
-                  </p>
+                <span>Agent:</span> {selectedUser.name}
+              </p>
               <p className="text-xs text-gray-500">
                 {selectedUser.status === "online"
                   ? "Online"
@@ -576,7 +529,7 @@ export default function ChatApp() {
                         </p>
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-xs opacity-70">
-                            {new Date(message.timestamp).toLocaleTimeString(
+                            {new Date(message.createdAt).toLocaleTimeString(
                               [],
                               {
                                 hour: "2-digit",
@@ -603,7 +556,10 @@ export default function ChatApp() {
                   className="flex mb-4 justify-start"
                 >
                   <img
-                    src={selectedUser.property.images[0].url || "/default-avatar.png"}
+                    src={
+                      selectedUser.property.images[0].url ||
+                      "/default-avatar.png"
+                    }
                     alt="User"
                     className="h-8 w-8 rounded-full object-cover mr-2 self-end"
                   />

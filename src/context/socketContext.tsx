@@ -57,7 +57,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   })
 
-  const [isTyping,setIsTyping] = useState<boolean>(true)
+  const [isTyping,setIsTyping] = useState<boolean>(false)
 
   useEffect(() => {
     const socketInstance = io(

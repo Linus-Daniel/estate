@@ -7,22 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import api, { getCsrfToken } from "@/lib/api";
-import { Message } from "@/types";
+import { ChatInfo, Message } from "@/types";
 
 
-interface ChatInfo {
-  _id: string;
-  participants: {
-    _id: string;
-    name: string;
-    photo?: string;
-  }[];
-  property?: {
-    _id: string;
-    title: string;
-    images: { url: string }[];
-  };
-}
+
 
 export default function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
