@@ -1,0 +1,57 @@
+// src/components/revenue/RevenueSummary.tsx
+import { DollarSign, CreditCard, TrendingUp, BarChart2 } from 'lucide-react';
+
+const stats = [
+  { 
+    title: 'Total Revenue', 
+    value: '$45,231.89', 
+    change: '+20.1% from last month', 
+    icon: DollarSign,
+    color: 'text-green-500'
+  },
+  { 
+    title: 'Transactions', 
+    value: '1,248', 
+    change: '+12% from last month', 
+    icon: CreditCard,
+    color: 'text-blue-500'
+  },
+  { 
+    title: 'Avg. Transaction', 
+    value: '$362.50', 
+    change: '+5.3% from last month', 
+    icon: TrendingUp,
+    color: 'text-purple-500'
+  },
+  { 
+    title: 'Pending Revenue', 
+    value: '$8,250.00', 
+    change: '-2.1% from last month', 
+    icon: BarChart2,
+    color: 'text-orange-500'
+  },
+];
+
+export default function RevenueSummary() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {stats.map((stat, index) => (
+        <div 
+          key={index} 
+          className="bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.title}</p>
+              <h2 className="text-2xl font-bold mt-1">{stat.value}</h2>
+            </div>
+            <div className={`p-3 rounded-lg ${stat.color.replace('text', 'bg')}/10`}>
+              <stat.icon className={`h-6 w-6 ${stat.color}`} />
+            </div>
+          </div>
+          <p className="text-xs mt-3 text-gray-500 dark:text-gray-400">{stat.change}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
