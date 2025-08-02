@@ -28,6 +28,7 @@ export default function EditProperty() {
     address: "",
     bedrooms: 0,
     bathrooms: 0,
+    status:"",
     description: "",
     images: [{ url: "", public_id: "" }],
     location:{formattedAddress:""},
@@ -59,6 +60,7 @@ export default function EditProperty() {
           description: data.description || "",
           images: data.images || [{ url: "", public_id: "" }],
           type: "",
+          status:"",
           amenities:[""],
           area:data.area
         });

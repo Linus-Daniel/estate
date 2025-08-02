@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Home,
   Bed,
@@ -28,13 +31,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-hot-toast";
+import ImageUpload from "@/components/imageUpload";
+import { useProperty } from "@/context/PropertyContext";
+import { Loader2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusColors = {
@@ -186,8 +188,66 @@ const ViewPropertyModal = ({ property }: { property: Property }) => {
 };
 
 const EditPropertyModal = ({ property }: { property: Property }) => {
+  const { updateProperty } = useProperty();
+  const [formData, setFormData] = useState<Property>(property);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.title) {
+      toast.error("Please provide a property title");
+      return;
+    }
+
+    if (!formData.price) {
+      toast.error("Please provide a property price");
+      return;
+    }
+
+    if (!formData.address) {
+      toast.error("Please provide a property address");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await updateProperty(property._id, {
+        title: formData.title,
+        price: formData.price,
+        address: formData.address,
+        bedrooms: formData.bedrooms || 0,
+        bathrooms: formData.bathrooms || 0,
+        description: formData.description,
+        images: formData.images,
+        type: formData.type,
+        area: formData.area,
+        status: formData.status,
+      });
+
+      toast.success("Property updated successfully!");
+      setOpen(false);
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Edit2 className="h-4 w-4 text-green-500" />
@@ -197,87 +257,174 @@ const EditPropertyModal = ({ property }: { property: Property }) => {
         <DialogHeader>
           <DialogTitle>Edit Property</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" defaultValue={property.title} />
-              </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" defaultValue={property.address} />
-              </div>
-              <div>
-                <Label htmlFor="price">Price</Label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                    <DollarSign className="h-4 w-4" />
-                  </span>
-                  <Input
-                    id="price"
-                    type="number"
-                    defaultValue={property.price}
-                    className="rounded-l-none"
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <section className="space-y-4">
+              <h3 className="font-medium">Property Images</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Main Image</Label>
+                  <ImageUpload
+                    value={formData.images[0]?.url || ""}
+                    onChange={(url) =>
+                      setFormData({
+                        ...formData,
+                        images: [
+                          {
+                            url,
+                            public_id: formData.images[0]?.public_id || "",
+                          },
+                        ],
+                      })
+                    }
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Upload a high-quality image of your property
+                  </p>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={property.status}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="sale">Sale</SelectItem>
-                    <SelectItem value="sold">Sold</SelectItem>
-                    <SelectItem value="rented">Rented</SelectItem>
-                  </SelectContent>
-                </Select>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-4">
+              <h3 className="font-medium">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Property Title*</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Beautiful 3-bedroom apartment"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price*</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-muted-foreground">
+                      $
+                    </span>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={handleChange}
+                      required
+                      disabled={isSubmitting}
+                      className="pl-8"
+                      placeholder="250,000"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Input id="type" defaultValue={property.type} />
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address*</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                  placeholder="123 Main St, City, Country"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  rows={5}
+                  value={formData.description}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  placeholder="Describe your property in detail..."
+                />
+              </div>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-4">
+              <h3 className="font-medium">Property Details</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="space-y-2">
                   <Label htmlFor="bedrooms">Bedrooms</Label>
                   <Input
                     id="bedrooms"
                     type="number"
-                    defaultValue={property.bedrooms}
+                    min="0"
+                    value={formData.bedrooms}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    placeholder="3"
                   />
                 </div>
-                <div>
+
+                <div className="space-y-2">
                   <Label htmlFor="bathrooms">Bathrooms</Label>
                   <Input
                     id="bathrooms"
                     type="number"
-                    defaultValue={property.bathrooms}
+                    min="0"
+                    value={formData.bathrooms}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    placeholder="2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="area">Area (sqft)</Label>
+                  <Input
+                    id="area"
+                    type="number"
+                    min="0"
+                    value={formData.area}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    placeholder="1500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Input
+                    id="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    placeholder="Apartment"
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="area">Area (sqft)</Label>
-                <Input id="area" type="number" defaultValue={property.area} />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  defaultValue={property.description || ""}
-                />
-              </div>
-            </div>
+            </section>
           </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline">Cancel</Button>
-            <Button>Save Changes</Button>
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
