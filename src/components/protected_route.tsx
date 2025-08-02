@@ -10,7 +10,7 @@ export default function ProtectedRoute({
   requiredRole, // Add this prop to specify which role can access this route
 }: {
   children: React.ReactNode;
-  requiredRole?: "agent" | "user"; // Make it optional if some routes are for both
+  requiredRole?: "agent" | "user" |"admin"; // Make it optional if some routes are for both
 }) {
   const { isAuthenticated, user, loading } = useAuth();
   const router = useRouter();
@@ -36,6 +36,9 @@ export default function ProtectedRoute({
             break;
           case "user":
             router.push("/user/");
+            break;
+          case "admin":
+            router.push("admin");
             break;
           default:
             router.push("/unauthorized");

@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     apiLogout();
     setToken(null);
     setUser(null);
-    router.push('/login');
+    router.push('/auth');
   };
 
   const value = {

@@ -37,31 +37,31 @@ export default function RevenueChart() {
         <h2 className="text-lg font-bold">Revenue Overview</h2>
         <div className="flex space-x-2">
           <button
-            onClick={() => setActiveTab('monthly')}
+            onClick={() => setActiveTab("monthly")}
             className={`px-3 py-1 text-sm rounded-md ${
-              activeTab === 'monthly'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+              activeTab === "monthly"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Monthly
           </button>
           <button
-            onClick={() => setActiveTab('quarterly')}
+            onClick={() => setActiveTab("quarterly")}
             className={`px-3 py-1 text-sm rounded-md ${
-              activeTab === 'quarterly'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+              activeTab === "quarterly"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Quarterly
           </button>
           <button
-            onClick={() => setActiveTab('yearly')}
+            onClick={() => setActiveTab("yearly")}
             className={`px-3 py-1 text-sm rounded-md ${
-              activeTab === 'yearly'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+              activeTab === "yearly"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Yearly
@@ -84,8 +84,10 @@ export default function RevenueChart() {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="revenue" fill="#4f46e5" name="Revenue" />
-            <Bar dataKey="expenses" fill="#10b981" name="Expenses" />
+            <Bar dataKey="revenue" fill="#6366f1" name="Revenue" />{" "}
+            {/* Indigo-500 */}
+            <Bar dataKey="expenses" fill="#22c55e" name="Expenses" />{" "}
+            {/* Green-500 */}
           </BarChart>
         </ResponsiveContainer>
       </div>

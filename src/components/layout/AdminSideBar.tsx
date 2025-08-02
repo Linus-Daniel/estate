@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, Home, MessageSquare, DollarSign, Settings, Menu, X } from 'lucide-react';
 
 const menuItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/admin/', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Properties', href: '/admin/properties', icon: Home },
   { name: 'Chat', href: '/admin/chat', icon: MessageSquare },

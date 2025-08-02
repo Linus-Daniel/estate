@@ -1,21 +1,49 @@
 // src/app/admin/properties/page.tsx
-import PropertyList from '@/components/PropertyList';
-// import PropertyFilters from '@/components/properties/PropertyFilters';
+import { cookies } from "next/headers";
+import serverApi from "@/lib/serverApi";
+import PropertyList from "@/components/PropertyList";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
-export default function PropertiesPage() {
+async function getProperties() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      console.warn("No authentication token found");
+      return [];
+    }
+
+    const response = await serverApi.get("/properties", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Failed to fetch properties:", error);
+    return [];
+  }
+}
+
+export default async function PropertiesPage() {
+  const properties = await getProperties();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Property Management</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
+        <Link
+          href="/admin/properties/add"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+        >
+          <Plus className="h-5 w-5 mr-2" />
           Add Property
-        </button>
+        </Link>
       </div>
-      {/* <PropertyFilters /> */}
-      <PropertyList />
+      <PropertyList properties={properties} />
     </div>
   );
 }

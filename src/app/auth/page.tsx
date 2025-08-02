@@ -87,6 +87,7 @@ export default function AuthForm() {
     if (mode === "signin") {
       try {
         await login(formData.email, formData.password);
+        console.log("login in")
       } catch (err) {
         console.error(err);
       }

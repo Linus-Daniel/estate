@@ -30,6 +30,7 @@ export interface Property {
    address:string;
     bedrooms: number;
     bathrooms: number;
+    status:string;
     images: [{
         url:string;
         public_id:string
