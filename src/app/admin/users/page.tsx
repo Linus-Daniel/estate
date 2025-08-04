@@ -1,8 +1,31 @@
-// src/app/admin/users/page.tsx
 import UserList from '@/components/UserList';
-// import UserFilters
+import serverApi from '@/lib/serverApi';
+import { User } from '@/types';
+import { cookies } from 'next/headers';
 
-export default function UsersPage() {
+async function getUsers (){
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+    try {
+    
+    const users = await serverApi.get("/users", {
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    })
+    console.log( "users data",users.data.data)
+    return users.data.data
+      
+    } catch (error) {
+      console.log(error)
+    }
+      
+}
+
+export default async  function UsersPage() {
+  const users = await getUsers()
+
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -15,7 +38,7 @@ export default function UsersPage() {
         </button>
       </div>
       {/* <UserFilters /> */}
-      <UserList />
+      <UserList users={users}/>
     </div>
   );
 }

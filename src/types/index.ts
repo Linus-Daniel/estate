@@ -19,6 +19,21 @@ export interface RoomData {
 
 }
 
+
+export type UserRole = "admin" | "agent" | "user";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  phone?: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+
+
 export interface Property {
     _id: string;
     title: string;

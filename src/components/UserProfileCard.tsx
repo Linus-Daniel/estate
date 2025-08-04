@@ -2,18 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-
-export type UserRole = "ADMIN" | "AGENT" | "LANDLORD" | "USER"
-
-export interface User {
-  id: string
-  name: string
-  email: string
-    avatar?: string
-    phone?: string
-  role: UserRole
-  createdAt: string
-}
+import { User } from "@/types"
 
 
 interface UserProfileCardProps {

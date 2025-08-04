@@ -1,38 +1,41 @@
 // src/components/dashboard/DashboardStats.tsx
 import { DollarSign, Home, Users, BarChart } from 'lucide-react';
 
-const stats = [
-  { 
-    title: 'Total Revenue', 
-    value: '$45,231.89', 
-    change: '+20.1% from last month', 
-    icon: DollarSign,
-    color: 'text-green-500'
-  },
-  { 
-    title: 'Properties', 
-    value: '124', 
-    change: '+18.1% from last month', 
-    icon: Home,
-    color: 'text-blue-500'
-  },
-  { 
-    title: 'Active Users', 
-    value: '573', 
-    change: '+12% from last month', 
-    icon: Users,
-    color: 'text-purple-500'
-  },
-  { 
-    title: 'Conversion Rate', 
-    value: '24.3%', 
-    change: '+2.6% from last month', 
-    icon: BarChart,
-    color: 'text-orange-500'
-  },
-];
-
-export default function DashboardStats() {
+export default  function DashboardStats({total,users,properties}:{total:number|undefined,
+  users:number|undefined,
+  properties:number | undefined}
+) {
+  
+  const stats = [
+    { 
+      title: 'Total Revenue', 
+      value: Number(total).toString(), 
+      change: '+20.1% from last month', 
+      icon: DollarSign,
+      color: 'text-green-500'
+    },
+    { 
+      title: 'Properties', 
+      value: properties?.toString(), 
+      change: '+18.1% from last month', 
+      icon: Home,
+      color: 'text-blue-500'
+    },
+    { 
+      title: 'Active Users', 
+      value: users?.toString(), 
+      change: '+12% from last month', 
+      icon: Users,
+      color: 'text-purple-500'
+    },
+    { 
+      title: 'Conversion Rate', 
+      value: '24.3%', 
+      change: '+2.6% from last month', 
+      icon: BarChart,
+      color: 'text-orange-500'
+    },
+  ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, index) => (
