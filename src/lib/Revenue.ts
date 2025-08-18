@@ -33,3 +33,33 @@ export async function fetchTotalRevenue() {
 
   console.log("Total Revenue (NGN): ₦" + (total / 100).toFixed(2));
 }
+
+
+
+export async function fetchTransaction() {
+
+  const PAYSTACK_SECRET_KEY ="sk_test_d539e31fbf881b504a0db70f4be9091b52807bbe";
+  if (!PAYSTACK_SECRET_KEY) {
+    console.log(PAYSTACK_SECRET_KEY, "PAYSTACK KEY");
+    console.error("Missing PAYSTACK_SECRET_KEY");
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.paystack.co/transaction`,
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+    const transaction = response.data;
+    console.log(transaction, " Transactions");
+    return transaction
+  } catch (error) {
+    console.log(error,"fa");
+  }
+}
+
+

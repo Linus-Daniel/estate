@@ -1,9 +1,11 @@
-// src/app/admin/revenue/page.tsx
 import RevenueTable from '@/components/RevenueTable';
-// import RevenueFilters from '@/components/revenue/RevenueFilters';
 import RevenueSummary from '@/components/RevenueSummary';
+import { fetchTransaction } from '@/lib/Revenue';
 
-export default function RevenuePage() {
+
+export default async function RevenuePage() {
+  const transactions = await fetchTransaction()
+  console.log(transactions)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

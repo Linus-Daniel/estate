@@ -5,7 +5,7 @@ import serverApi from "@/lib/serverApi";
 import { cookies } from "next/headers";
 
 
-export async function getStatsInfo() {
+async function getStatsInfo() {
   const urls = [
     "/users",
     "/properties", 

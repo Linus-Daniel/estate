@@ -84,14 +84,6 @@ export default function PaymentPage() {
         setIsVerifying(false)
       }
     }
-
-    // if (propertyId) {
-    //   fetchProperty()
-    // } else {
-    //   setLoading(false)
-    //   toast.error('No property specified')
-    //   // router.push('/tenant/properties')
-    // }
     fetchProperty()
   }, [propertyId, router])
   useEffect(() => {
@@ -222,7 +214,7 @@ export default function PaymentPage() {
         </div>
         <div className="mt-6 flex gap-3 justify-center">
           <Button asChild variant="outline">
-            <Link href={`/tenant/properties/${propertyId}`}>
+            <Link href={`/user/properties/${propertyId}`}>
               View Property
             </Link>
           </Button>
@@ -262,7 +254,7 @@ export default function PaymentPage() {
         <h2 className="text-xl font-semibold">Property Not Found</h2>
         <p className="mt-2 text-gray-600">The property you're trying to pay for doesn't exist.</p>
         <Button className="mt-4" asChild>
-          <Link href="/tenant/properties">
+          <Link href="/user/properties">
             Browse Properties
           </Link>
         </Button>

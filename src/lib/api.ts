@@ -12,7 +12,6 @@ const api = axios.create({
 // Add request interceptor to include token if available
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  console.log("Token", token)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -49,6 +48,7 @@ export async function getCsrfToken() {
   } catch (error) {
     console.error(error);
   }
+  
 }
 
 interface UserData {
