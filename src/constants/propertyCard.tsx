@@ -1,34 +1,117 @@
 // components/PropertyCard.tsx
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import PropertyChatButton from "@/components/startChatButton";
 import { Property } from "@/types";
+import { MapPin } from "lucide-react";
 
-export function PropertyCard({ property }: { property: Property }) {
+export function PropertyCard({
+  property,
+  viewMode = "grid",
+}: {
+  property: Property;
+  viewMode?: "grid" | "list";
+}) {
   // Format price with commas if it's a number
-  const formattedPrice = typeof property.price === 'number' 
-    ? property.price.toLocaleString() 
-    : property.price;
+  const formattedPrice =
+    typeof property.price === "number"
+      ? property.price.toLocaleString()
+      : property.price;
 
   // Shorten the description for mobile
-  const shortDescription = property.description.length > 100 
-    ? `${property.description.substring(0, 100)}...` 
-    : property.description;
+  const shortDescription =
+    property.description.length > 100
+      ? `${property.description.substring(0, 100)}...`
+      : property.description;
 
   // Extract just the city from the address for mobile view
-  const locationParts = property.location?.formattedAddress?.split(',') || [];
-  const shortLocation = locationParts.length > 1 
-    ? `${locationParts[0]},${locationParts[locationParts.length - 1]}` 
-    : property.location?.formattedAddress;
+  const locationParts = property.location?.formattedAddress?.split(",") || [];
+  const shortLocation =
+    locationParts.length > 1
+      ? `${locationParts[0]},${locationParts[locationParts.length - 1]}`
+      : property.location?.formattedAddress;
 
+  if (viewMode === "list") {
+    return (
+      <Card className="flex flex-col md:flex-row w-full rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200">
+        {/* Image for list view */}
+        <div className="md:w-1/3 relative aspect-[4/3]">
+          <Image
+            src={property.images[0]?.url || "/placeholder-property.jpg"}
+            alt={property.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        </div>
+
+        {/* Content for list view */}
+        <div className="md:w-2/3 p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-start gap-2 mb-2">
+              <h3 className="text-lg font-semibold line-clamp-1">
+                {property.title}
+              </h3>
+              <span className="text-lg font-bold text-primary whitespace-nowrap">
+                ₦{formattedPrice}
+              </span>
+            </div>
+
+            <div className="flex items-center text-sm text-gray-500 mb-3">
+              <MapPin className="h-4 w-4 mr-1" />
+              <span className="line-clamp-1">
+                {property.location?.formattedAddress}
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4 hidden md:block">
+              {property.description}
+            </p>
+            <p className="text-sm text-gray-600 mb-4 md:hidden">
+              {shortDescription}
+            </p>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-4">
+              <span className="flex items-center gap-1">
+                <span className="text-gray-500">🛏️</span> {property.bedrooms}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="text-gray-500">🚿</span> {property.bathrooms}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="text-gray-500">📐</span> {property.area}m²
+              </span>
+              {property.amenities?.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="text-gray-500">✨</span>{" "}
+                  {property.amenities[0]}
+                  {property.amenities.length > 1 &&
+                    ` +${property.amenities.length - 1}`}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <PropertyChatButton propertyId={property._id} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Default grid view
   return (
-    <Card className="w-full  p-0 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]  duration-200">
+    <Card className="w-full p-0 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] duration-200">
       {/* Image with aspect ratio */}
       <div className="relative aspect-[4/3] w-full">
         <Image
-          src={property.images[0]?.url || '/placeholder-property.jpg'}
+          src={property.images[0]?.url || "/placeholder-property.jpg"}
           alt={property.title}
           fill
           className="object-cover"
@@ -40,8 +123,12 @@ export function PropertyCard({ property }: { property: Property }) {
       {/* Header (Name & Price) */}
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
-          <span className="text-lg font-bold text-primary whitespace-nowrap">₦{formattedPrice}</span>
+          <h3 className="text-lg font-semibold line-clamp-1">
+            {property.title}
+          </h3>
+          <span className="text-lg font-bold text-primary whitespace-nowrap">
+            ₦{formattedPrice}
+          </span>
         </div>
         <p className="text-sm text-gray-500 line-clamp-1 hidden sm:block">
           {property.location?.formattedAddress}
@@ -72,7 +159,8 @@ export function PropertyCard({ property }: { property: Property }) {
           {property.amenities?.length > 0 && (
             <span className="flex items-center gap-1">
               <span className="text-gray-500">✨</span> {property.amenities[0]}
-              {property.amenities.length > 1 && ` +${property.amenities.length - 1}`}
+              {property.amenities.length > 1 &&
+                ` +${property.amenities.length - 1}`}
             </span>
           )}
         </div>
@@ -80,10 +168,7 @@ export function PropertyCard({ property }: { property: Property }) {
 
       {/* Footer (Action Button) */}
       <CardFooter className="p-4 pt-0">
-        <PropertyChatButton 
-          propertyId={property._id} 
-          // className="w-full py-2 text-sm"
-        />
+        <PropertyChatButton propertyId={property._id} />
       </CardFooter>
     </Card>
   );

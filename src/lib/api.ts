@@ -29,7 +29,7 @@ api.interceptors.response.use(
     }
     return Promise.reject(error);
   }
-);
+);2
 
 export default api
 

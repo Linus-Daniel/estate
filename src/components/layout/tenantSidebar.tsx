@@ -23,7 +23,11 @@ const userNavItems = [
   { name: "Maintenance", href: "/user/maintenance", icon: Wrench },
   { name: "Pay Rent", href: "/user/pay", icon: DollarSign },
   { name: "Find Apartment", href: "/user/findhome", icon: DollarSign },
-  { name: "Transactions History", href: "/user/transactions", icon: CreditCard },
+  {
+    name: "Transactions History",
+    href: "/user/transactions",
+    icon: CreditCard,
+  },
   { name: "Chats", href: "/user/chats", icon: MessageSquare },
   { name: "Calendar", href: "/user/calendar", icon: Calendar },
   { name: "Help Center", href: "/user/help", icon: HelpCircle },
@@ -54,35 +58,35 @@ export default function UserSidebar() {
 
   const renderDesktopSidebar = () => (
     <div className="hidden lg:flex lg:flex-shrink-0">
-      <div className="flex flex-col w-64 border-r border-gray-200 bg-white">
+      <div className="flex flex-col w-64 border-r border-indigo-100 bg-gradient-to-b from-indigo-50 to-white">
         {/* Logo */}
-        <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200">
+        <div className="flex items-center h-20 flex-shrink-0 px-6 border-b border-indigo-100 bg-indigo-600">
           <Link href="/user" className="flex items-center">
-            <Home className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">
+            <Home className="h-8 w-8 text-white" />
+            <span className="ml-3 text-xl font-bold text-white">
               User Portal
             </span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 flex flex-col overflow-y-auto">
-          <div className="space-y-1 px-2 py-4">
+        <nav className="flex-1 flex flex-col overflow-y-auto py-6">
+          <div className="space-y-1 px-4">
             {userNavItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === item.href
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-indigo-100 text-indigo-700 shadow-sm"
+                    : "text-indigo-900 hover:text-indigo-700 hover:bg-indigo-50"
                 }`}
               >
                 <item.icon
                   className={`mr-3 h-5 w-5 ${
                     pathname === item.href
-                      ? "text-blue-500"
-                      : "text-gray-400 group-hover:text-gray-500"
+                      ? "text-indigo-600"
+                      : "text-indigo-400 group-hover:text-indigo-500"
                   }`}
                 />
                 {item.name}
@@ -98,7 +102,7 @@ export default function UserSidebar() {
     <div className="lg:hidden fixed top-4 left-4 z-20">
       <button
         onClick={toggleMobileMenu}
-        className="p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none"
+        className="p-2 rounded-lg text-indigo-700 bg-white shadow-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
         {mobileMenuOpen ? (
           <X className="h-6 w-6" />
@@ -114,53 +118,57 @@ export default function UserSidebar() {
       {/* Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
+          className="fixed inset-0 bg-indigo-900 bg-opacity-30 backdrop-blur-sm z-10 lg:hidden"
           onClick={toggleMobileMenu}
         ></div>
       )}
-      
+
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-20 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:hidden ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-20 w-64 bg-gradient-to-b from-indigo-50 to-white transform transition-transform duration-300 ease-in-out lg:hidden ${
+          mobileMenuOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <Link href="/user" className="flex items-center" onClick={toggleMobileMenu}>
-              <Home className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">
+          <div className="flex items-center justify-between h-20 px-6 border-b border-indigo-100 bg-indigo-600">
+            <Link
+              href="/user"
+              className="flex items-center"
+              onClick={toggleMobileMenu}
+            >
+              <Home className="h-8 w-8 text-white" />
+              <span className="ml-3 text-xl font-bold text-white">
                 User Portal
               </span>
             </Link>
             <button
               onClick={toggleMobileMenu}
-              className="p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none"
+              className="p-2 rounded-lg text-white hover:bg-indigo-700 focus:outline-none"
             >
               <X className="h-6 w-6" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 flex flex-col overflow-y-auto">
-            <div className="space-y-1 px-2 py-4">
+          <nav className="flex-1 flex flex-col overflow-y-auto py-6">
+            <div className="space-y-1 px-4">
               {userNavItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   onClick={toggleMobileMenu}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                     pathname === item.href
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-indigo-100 text-indigo-700 shadow-sm"
+                      : "text-indigo-900 hover:text-indigo-700 hover:bg-indigo-50"
                   }`}
                 >
                   <item.icon
                     className={`mr-3 h-5 w-5 ${
                       pathname === item.href
-                        ? "text-blue-500"
-                        : "text-gray-400 group-hover:text-gray-500"
+                        ? "text-indigo-600"
+                        : "text-indigo-400 group-hover:text-indigo-500"
                     }`}
                   />
                   {item.name}

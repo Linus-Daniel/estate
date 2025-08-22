@@ -23,7 +23,6 @@ export default function Home() {
       </Head>
 
       <main>
-        <Header  />
         <Hero />
         <Cities />
         <FeaturedProperties />

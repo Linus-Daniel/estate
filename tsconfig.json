@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/user/properties", "src/app/faq", "src/app/admin/chat"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/user/properties", "src/app/(home)/faq", "src/app/admin/chat"],
   "exclude": ["node_modules"]
 }

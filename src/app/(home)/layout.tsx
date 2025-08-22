@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "../globals.css";
 import { AuthProvider } from "@/context/auth_context";
 import Header from "@/components/sections/header";
 import { PropertyProvider } from "@/context/PropertyContext";
@@ -25,7 +25,7 @@ export default function RootLayout({
         <AuthProvider>
           <SocketProvider>
             <PropertyProvider>
-              {/* <Header /> */}
+              <Header />
               <main className="">{children}</main>
             </PropertyProvider>
           </SocketProvider>

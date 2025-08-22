@@ -53,7 +53,7 @@ const Header = () => {
 
   return (
     <motion.header
-      className={`fixed p-2 w-full z-50 ${isHomepage ? "" : "bg-white shadow-md"}`}
+      className={`sticky top-0 p-2 w-full z-50 ${isHomepage ? "bg-white": "bg-white shadow-md"}`}
       initial="hidden"
       animate={["visible", scrolled ? "scrolled" : ""]}
       variants={backgroundVariants}
@@ -66,7 +66,7 @@ const Header = () => {
           initial={{ opacity: 0 }}
           animate={{ 
             opacity: scrolled ? 0 : 1,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.3), transparent)"
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.3))"
           }}
           transition={{ duration: 0.5 }}
         />
@@ -131,8 +131,8 @@ const Header = () => {
                     whileTap={{ scale: 0.95 }}
                     className={`px-4 py-2 rounded-full font-medium border-2 ${
                       isHomepage && !scrolled
-                        ? "border-white text-white hover:bg-white hover:bg-opacity-10"
-                        : "border-primary text-primary hover:bg-primary hover:bg-opacity-10"
+                        ? "border-white text-white hover:bg-white/10"
+                        : "border-primary text-primary hover:bg-primary/10 hover:bg-opacity-10"
                     } transition-colors`}
                   >
                     Signup
