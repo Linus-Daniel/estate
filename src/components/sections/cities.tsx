@@ -1,64 +1,140 @@
-'use client';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { FiArrowRight } from 'react-icons/fi';
+"use client";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { FiArrowRight, FiMapPin, FiHome } from "react-icons/fi";
 
 const cities = [
-  { name: 'Dallas', properties: 263, image: '/images/cities/city1.jpg'},
-  { name: 'Miami', properties: 263, image: '/images/cities/city2.jpg'},
-  { name: 'Seattle', properties: 263, image: '/images/cities/city3.webp' },
-  { name: 'Denver', properties: 263, image: '/images/cities/city4.jpg'},
-  { name: 'Houston', properties: 263, image: '/images/cities/city5.jpg' },
-  { name: 'Atlanta', properties: 263, image: '/images/cities/city6.webp' },
-  { name: 'Orlando', properties: 263, image: '/images/cities/city7.webp' },
-  { name: 'Phoenix', properties: 263, image: '/images/cities/city8.webp' },
-  { name: 'Austin', properties: 263, image: '/images/cities/city9.avif'},
+  {
+    name: "Lagos",
+    properties: 1243,
+    image: "/images/cities/lagos.jpg",
+    description: "Nigeria's economic hub with vibrant properties",
+  },
+  {
+    name: "Abuja",
+    properties: 876,
+    image: "/images/cities/abuja.jpg",
+    description: "Beautiful capital city with modern developments",
+  },
+  {
+    name: "Port Harcourt",
+    properties: 542,
+    image: "/images/cities/portharcourt.jpg",
+    description: "Oil-rich city with growing real estate market",
+  },
+  {
+    name: "Ibadan",
+    properties: 487,
+    image: "/images/cities/ibadan.jpg",
+    description: "Historical city with affordable housing options",
+  },
+  {
+    name: "Kano",
+    properties: 398,
+    image: "/images/cities/kano.jpg",
+    description: "Northern commercial center with traditional homes",
+  },
+  {
+    name: "Enugu",
+    properties: 325,
+    image: "/images/cities/enugu.jpg",
+    description: "Picturesque city with cool climate properties",
+  },
+  {
+    name: "Benin City",
+    properties: 287,
+    image: "/images/cities/benin.jpg",
+    description: "Cultural heritage city with diverse properties",
+  },
+  {
+    name: "Abeokuta",
+    properties: 264,
+    image: "/images/cities/abeokuta.jpg",
+    description: "Rock city with expanding suburban developments",
+  },
+  {
+    name: "Uyo",
+    properties: 219,
+    image: "/images/cities/uyo.jpg",
+    description: "Fast-growing capital with modern infrastructure",
+  },
 ];
 
 const Cities = () => {
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Properties By Cities</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Explore our properties in these popular city city1.jpgcountry
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 mb-4">
+            <FiMapPin className="mr-2" />
+            <span className="text-sm font-medium">Explore Nigerian Cities</span>
+          </div>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Find Properties Across Nigeria
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            Discover homes in Nigeria's most vibrant cities. From Lagos
+            apartments to Abuja villas, find your perfect space.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {cities.map((city, index) => (
             <motion.div
               key={city.name}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex  sm:flex-row"
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+              viewport={{ once: true, margin: "-50px" }}
+              whileHover={{ y: -8 }}
+              className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
             >
-              <Image
-                src={city.image}
-                alt={city.name}
-                width={150}
-                height={100}
-                className=" rounded-l-xl sm:rounded-l-xl sm:rounded-tr-none"
-              />
-              <div className="p-6 flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{city.name}</h3>
-                <p className="text-gray-600 mb-4">{city.properties} properties</p>
-                <button className="text-primary flex items-center space-x-1">
-                  <span>Explore Now</span>
-                  <FiArrowRight />
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={city.image}
+                  alt={city.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div className="absolute bottom-4 left-4">
+                  <h3 className="text-xl font-bold text-white">{city.name}</h3>
+                  <div className="flex items-center text-green-200">
+                    <FiHome className="mr-1" />
+                    <span>{city.properties} properties</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="text-gray-600 mb-5">{city.description}</p>
+                <button className="flex items-center text-green-600 font-medium group-hover:text-green-700 transition-colors">
+                  <span>Explore {city.name} Properties</span>
+                  <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </motion.div>
           ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mt-16"
+        >
+          <button className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-full font-medium flex items-center justify-center mx-auto shadow-md hover:shadow-lg transition-all">
+            <span>View All Nigerian Cities</span>
+            <FiArrowRight className="ml-2" />
+          </button>
+        </motion.div>
       </div>
     </section>
   );

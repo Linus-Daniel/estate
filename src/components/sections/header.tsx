@@ -1,13 +1,27 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { FiMenu, FiX, FiHome, FiSearch, FiUser, FiHeart } from "react-icons/fi";
+import {
+  FiMenu,
+  FiX,
+  FiHome,
+  FiSearch,
+  FiUser,
+  FiHeart,
+  FiMessageSquare,
+} from "react-icons/fi";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth_context";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { User } from "lucide-react";
+import { User, Settings, LogOut, Star, Home } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 
 const Header = () => {
@@ -30,11 +44,15 @@ const Header = () => {
   });
 
   const navItems = [
-    { name: "Home", url: "/" },
-    { name: "Properties", url: "/findhomes" },
-    { name: "Agents", url: "/agents" },
-    { name: "Blogs", url: "/blogs" },
-    { name: "Contacts", url: "/contact-us" },
+    { name: "Home", url: "/", icon: <FiHome className="mr-2" /> },
+    {
+      name: "Properties",
+      url: "/findhomes",
+      icon: <FiSearch className="mr-2" />,
+    },
+    { name: "Agents", url: "/agents", icon: <FiUser className="mr-2" /> },
+    { name: "Blog", url: "/blogs", icon: <FiMessageSquare className="mr-2" /> },
+    { name: "Contact", url: "/contact-us", icon: <FiHeart className="mr-2" /> },
   ];
 
   const handleAuthNavigation = () => {
@@ -44,34 +62,23 @@ const Header = () => {
   // Dynamic background variants
   const backgroundVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    scrolled: { 
+    visible: {
+      opacity: 1,
       backgroundColor: "rgba(255, 255, 255, 1)",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-    }
+      boxShadow: scrolled ? "0 4px 20px rgba(0, 0, 0, 0.08)" : "none",
+    },
   };
 
   return (
     <motion.header
-      className={`sticky top-0 p-2 w-full z-50 ${isHomepage ? "bg-white": "bg-white shadow-md"}`}
+      className={`sticky top-0 w-full z-50 transition-all duration-300 ${
+        scrolled ? "py-2" : "py-4"
+      }`}
       initial="hidden"
-      animate={["visible", scrolled ? "scrolled" : ""]}
+      animate="visible"
       variants={backgroundVariants}
       transition={{ duration: 0.3 }}
     >
-      {/* Animated background overlay - only on homepage */}
-      {isHomepage && (
-        <motion.div
-          className="absolute inset-0 -z-10"
-          initial={{ opacity: 0 }}
-          animate={{ 
-            opacity: scrolled ? 0 : 1,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.3))"
-          }}
-          transition={{ duration: 0.5 }}
-        />
-      )}
-
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
@@ -79,30 +86,37 @@ const Header = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl font-bold"
+            className="flex items-center"
           >
-            <Link href="/" className={`${isHomepage && !scrolled ? "text-white" : "text-primary"}`}>
-              Linux Homes
+            <Link
+              href="/"
+              className="text-2xl font-bold text-green-700 flex items-center"
+            >
+              <div className="bg-green-100 p-2 rounded-lg mr-2">
+                <Home className="h-6 w-6 text-green-600" />
+              </div>
+              <span>NaijaHomes</span>
             </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <nav className="flex space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
+            <nav className="flex space-x-6">
               {navItems.map((item, index) => (
                 <motion.div
                   key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
                 >
                   <Link
                     href={item.url}
-                    className={`font-medium transition-colors ${
-                      isHomepage && !scrolled
-                        ? "text-white hover:text-primary-200"
-                        : "text-gray-700 hover:text-primary"
+                    className={`font-medium transition-colors flex items-center py-2 ${
+                      pathname === item.url
+                        ? "text-green-600 border-b-2 border-green-600"
+                        : "text-gray-700 hover:text-green-600"
                     }`}
                   >
+                    {item.icon}
                     {item.name}
                   </Link>
                 </motion.div>
@@ -110,137 +124,200 @@ const Header = () => {
             </nav>
 
             {/* Auth Buttons */}
-            <div>
+            <div className="flex items-center space-x-3 ml-4">
               {!isAuthenticated ? (
-                <div className="flex space-x-4 ml-8">
+                <>
                   <motion.button
                     onClick={handleAuthNavigation}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`px-4 py-2 rounded-md font-medium ${
-                      isHomepage && !scrolled
-                        ? "bg-white text-primary hover:bg-gray-100"
-                        : "bg-primary text-white hover:bg-primary-600"
-                    } transition-colors`}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="px-5 py-2.5 rounded-lg font-medium bg-white text-green-700 border border-green-700 hover:bg-green-50 transition-colors"
                   >
                     Login
                   </motion.button>
                   <motion.button
                     onClick={handleAuthNavigation}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="px-5 py-2.5 rounded-lg font-medium bg-green-700 text-white hover:bg-green-800 transition-colors shadow-md"
+                  >
+                    Sign Up
+                  </motion.button>
+                </>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`px-4 py-2 rounded-full font-medium border-2 ${
-                      isHomepage && !scrolled
-                        ? "border-white text-white hover:bg-white/10"
-                        : "border-primary text-primary hover:bg-primary/10 hover:bg-opacity-10"
-                    } transition-colors`}
+                    className="p-2.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
                   >
-                    Signup
+                    <FiHeart className="h-5 w-5" />
                   </motion.button>
-                </div>
-              ) : (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className={`relative h-9 px-2 rounded-full flex items-center gap-2 ${
-                        isHomepage && !scrolled ? "hover:bg-white hover:bg-opacity-20" : "hover:bg-gray-100"
-                      }`}
-                    >
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                        isHomepage && !scrolled ? "bg-white bg-opacity-20" : "bg-blue-100"
-                      }`}>
-                        {user ? (
-                          <User className={`h-4 w-4 ${
-                            isHomepage && !scrolled ? "text-white" : "text-blue-600"
-                          }`} />
-                        ) : (
-                          <Skeleton className="h-8 w-8 rounded-full" />
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="relative h-10 px-2 rounded-full flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200"
+                      >
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-green-100 text-green-700">
+                          {user ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                          )}
+                        </div>
+                        {user && (
+                          <span className="hidden sm:inline font-medium text-sm truncate max-w-[120px] text-gray-700">
+                            {user.name}
+                          </span>
                         )}
-                      </div>
-                      {user && (
-                        <span className={`hidden sm:inline font-medium text-sm truncate max-w-[120px] ${
-                          isHomepage && !scrolled ? "text-white" : "text-gray-700"
-                        }`}>
-                          {user.name}
-                        </span>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href={`${user?.role === "agent"?"/agent/dashboard":"/user"}`} className="w-full">
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/settings" className="w-full">
-                        Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="cursor-pointer text-red-600 focus:text-red-600"
-                      onClick={() => logout()}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-56"
+                      align="end"
+                      forceMount
                     >
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <div className="flex items-center justify-start p-2 border-b">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium">{user?.name}</p>
+                          <p className="text-xs text-gray-500">{user?.email}</p>
+                        </div>
+                      </div>
+                      <DropdownMenuItem className="cursor-pointer p-3">
+                        <Link
+                          href={`${
+                            user?.role === "agent"
+                              ? "/agent/dashboard"
+                              : "/user"
+                          }`}
+                          className="flex items-center w-full"
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer p-3">
+                        <Link
+                          href="/favorites"
+                          className="flex items-center w-full"
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          <span>Favorites</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer p-3">
+                        <Link
+                          href="/settings"
+                          className="flex items-center w-full"
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer p-3 text-red-600 focus:text-red-600"
+                        onClick={() => logout()}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               )}
             </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className={`md:hidden focus:outline-none ${
-              isHomepage && !scrolled ? "text-white" : "text-gray-700"
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            className={`md:hidden focus:outline-none p-2 rounded-lg ${
+              isOpen
+                ? "bg-green-100 text-green-700"
+                : "bg-gray-100 text-gray-700"
             }`}
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-          </button>
+          </motion.button>
         </div>
 
         {/* Mobile Menu */}
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden mt-4 py-4 bg-white rounded-lg shadow-xl"
-          >
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{
+            opacity: isOpen ? 1 : 0,
+            height: isOpen ? "auto" : 0,
+          }}
+          transition={{ duration: 0.3 }}
+          className="md:hidden overflow-hidden"
+        >
+          <div className="py-4 bg-white rounded-lg shadow-xl mt-4 border border-gray-200">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.url}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className="flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
                 onClick={() => setIsOpen(false)}
               >
+                {item.icon}
                 {item.name}
               </Link>
             ))}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  handleAuthNavigation();
-                  setIsOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => {
-                  handleAuthNavigation();
-                  setIsOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Sign Up
-              </button>
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              {!isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => {
+                      handleAuthNavigation();
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center"
+                  >
+                    <FiUser className="mr-2" />
+                    Login
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleAuthNavigation();
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center"
+                  >
+                    <FiUser className="mr-2" />
+                    Sign Up
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`${
+                      user?.role === "agent" ? "/agent/dashboard" : "/user"
+                    }`}
+                    className="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors flex items-center"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
       </div>
     </motion.header>
   );

@@ -25,7 +25,7 @@ const mockInitiateChat = async (propertyId: string) => {
   return { data: MOCK_CHAT_RESPONSE };
 };
 
-export default function PropertyChatButton({ propertyId }: { propertyId: string }) {
+export default function PropertyChatButton({ propertyId, className }: { propertyId: string , className?: string}) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function PropertyChatButton({ propertyId }: { propertyId: string 
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button onClick={initiateChat} disabled={loading}>
+      <Button className={`${className}`} onClick={initiateChat} disabled={loading}>
         <MessageSquare className="mr-2 h-4 w-4" />
         {loading ? 'Starting chat...' : 'Chat with Agent'}
       </Button>
