@@ -92,7 +92,7 @@ const Hero = () => {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
               <img
-                src="/images/houses/nigerian-home.jpg"
+                src="/images/houses/kano.jpg"
                 alt="Beautiful Nigerian home"
                 className="w-full h-[500px] object-cover"
               />

@@ -5,37 +5,22 @@ import { FiPhone, FiMail, FiMapPin, FiUser } from "react-icons/fi";
 
 const agents = [
   {
-    name: "Jack Halow",
+    name: "Linus Daniel",
     role: "CEO & Founder",
-    phone: "1-333-345-6868",
-    email: "themesflat@gmail.com",
+    phone: "+2349015648441",
+    email: "vandulinus@gmail.com",
     address: "2972 Westheimer Rd. Santa Ana, Illinois 85486",
     image: "/images/agents/agent1.jpg",
   },
   {
-    name: "Darrell Steward",
-    role: "CEO & Founder",
-    phone: "1-333-345-6868",
+    name: "Zipporah Obed",
+    role: "Technical Assistant/ Manager",
+    phone: "+2349064133334",
     email: "themesflat@gmail.com",
     address: "2972 Westheimer Rd. Santa Ana, Illinois 85486",
     image: "/images/agents/agent2.jpg",
   },
-  {
-    name: "Theresa Webb",
-    role: "CEO & Founder",
-    phone: "1-333-345-6868",
-    email: "themesflat@gmail.com",
-    address: "2972 Westheimer Rd. Santa Ana, Illinois 85486",
-    image: "/images/agents/agent3.jpg",
-  },
-  {
-    name: "Marvin McKinney",
-    role: "CEO & Founder",
-    phone: "1-333-345-6868",
-    email: "themesflat@gmail.com",
-    address: "2972 Westheimer Rd. Santa Ana, Illinois 85486",
-    image: "/images/agents/agent4.jpeg",
-  },
+
 ];
 
 const Agents = () => {

@@ -20,6 +20,8 @@ export interface RoomData {
 }
 
 
+
+
 export type UserRole = "admin" | "agent" | "user";
 
 export interface User {
@@ -120,3 +122,135 @@ export type Message = {
       images: { url: string }[];
     };
   }
+
+
+  // Base subscription plan details
+export interface PlanDetails {
+  name: string;
+  price: number;
+  duration: number; // in days
+  propertyLimit: number;
+  featuredListings: number;
+  prioritySupport: boolean;
+}
+
+// Payment information
+export interface PaymentDetails {
+  amountPaid: number;
+  paidAt: string; // ISO date string
+  paymentMethod: 'paystack' | 'flutterwave' | 'bank_transfer' | string;
+  transactionId: string;
+}
+
+// Main subscription object from API
+export interface SubscriptionResponse {
+  _id: string;
+  agent: string; // Agent ID
+  plan: 'basic' | 'premium' | 'enterprise' | string;
+  planDetails: PlanDetails;
+  paymentDetails: PaymentDetails;
+  autoRenewal: boolean;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  startDate: string; // ISO date string
+  endDate: string; // ISO date string
+  status: 'active' | 'expired' | 'cancelled' | 'pending';
+  featuredListingsUsed: number;
+  propertiesPosted: number;
+  __v: number;
+}
+
+// Transformed subscription data for UI display
+export interface SubscriptionData {
+  plan: string;
+  price: string; // Formatted with currency
+  duration: string; // e.g., "30 days"
+  properties: number;
+  featured: number;
+  support: string;
+  transactionId: string;
+  endDate: string; // Formatted date
+  startDate: string; // Formatted date
+  autoRenewal: boolean;
+  status: string;
+  paymentMethod: string;
+  paidAt: string; // Formatted date
+}
+
+// API Response wrapper
+export interface SubscriptionApiResponse {
+  success: boolean;
+  message: string;
+  data: SubscriptionResponse;
+}
+
+// Payment verification request
+export interface PaymentVerificationRequest {
+  reference: string;
+}
+
+// Payment verification response
+export interface PaymentVerificationResponse {
+  success: boolean;
+  message: string;
+  data: SubscriptionResponse;
+}
+
+// Plan types enum for better type safety
+export enum PlanType {
+  BASIC = 'basic',
+  PREMIUM = 'premium',
+  ENTERPRISE = 'enterprise'
+}
+
+// Subscription status enum
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  CANCELLED = 'cancelled',
+  PENDING = 'pending'
+}
+
+// Payment method enum
+export enum PaymentMethod {
+  PAYSTACK = 'paystack',
+  FLUTTERWAVE = 'flutterwave',
+  BANK_TRANSFER = 'bank_transfer'
+}
+
+// Component props type
+export interface SubscriptionSuccessPageProps {
+  reference?: string;
+}
+
+// Hook return type for subscription data
+export interface UseSubscriptionData {
+  // subscriptionData: TransformedSubscriptionData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+// Utility type for creating new subscriptions
+export interface CreateSubscriptionPayload {
+  agentId: string;
+  planType: PlanType;
+  paymentReference: string;
+  autoRenewal?: boolean;
+}
+
+// Subscription update payload
+export interface UpdateSubscriptionPayload {
+  subscriptionId: string;
+  autoRenewal?: boolean;
+  status?: SubscriptionStatus;
+}
+
+// Subscription analytics/stats
+export interface SubscriptionStats {
+  totalSubscriptions: number;
+  activeSubscriptions: number;
+  expiredSubscriptions: number;
+  totalRevenue: number;
+  monthlyRevenue: number;
+}
